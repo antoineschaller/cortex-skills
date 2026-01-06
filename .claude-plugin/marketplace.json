@@ -51,6 +51,48 @@
       "source": "./skills/lead-gen",
       "category": "business",
       "skills": ["./lead-scoring", "./sla-tracking"]
+    },
+    {
+      "name": "ballee-skills",
+      "description": "Ballee dance production management: database, Flutter mobile, web patterns, integrations",
+      "version": "1.0.0",
+      "author": {
+        "name": "Antoine Schaller"
+      },
+      "source": "./skills/ballee",
+      "category": "development",
+      "skills": [
+        "./database-migration-manager",
+        "./rls-policy-generator",
+        "./production-database-query",
+        "./db-performance-patterns",
+        "./db-anti-patterns",
+        "./db-lint-manager",
+        "./mongodb-production-query",
+        "./api-patterns",
+        "./service-patterns",
+        "./ui-patterns",
+        "./test-patterns",
+        "./i18n-translation-guide",
+        "./document-patterns",
+        "./flutter-development",
+        "./flutter-testing",
+        "./flutter-query-lint",
+        "./xcode-cloud-cicd",
+        "./cicd-pipeline",
+        "./dev-environment-manager",
+        "./sentry-error-manager",
+        "./visual-testing",
+        "./airtable-sync-specialist",
+        "./meteor-sync-specialist",
+        "./supabase-realtime-specialist",
+        "./supabase-email-templates",
+        "./tipalti-integration-specialist",
+        "./code-quality-tools",
+        "./user-stories-manager",
+        "./wip-lifecycle-manager",
+        "./bulk-support-message"
+      ]
     }
   ]
 }
