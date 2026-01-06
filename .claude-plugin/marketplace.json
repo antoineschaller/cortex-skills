@@ -79,6 +79,7 @@
         "./flutter-testing",
         "./flutter-query-lint",
         "./xcode-cloud-cicd",
+        "./mobile-deployment",
         "./cicd-pipeline",
         "./dev-environment-manager",
         "./sentry-error-manager",
