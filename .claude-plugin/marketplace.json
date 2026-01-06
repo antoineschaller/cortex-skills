@@ -1,0 +1,56 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "cortex-skills",
+  "version": "1.0.0",
+  "description": "Reusable Claude Code skills for e-commerce, analytics, and development",
+  "owner": {
+    "name": "Antoine Schaller",
+    "email": "antoine@akson.ch"
+  },
+  "plugins": [
+    {
+      "name": "shopify-skills",
+      "description": "Shopify development: translations, Liquid patterns, theme development",
+      "version": "1.0.0",
+      "author": {
+        "name": "Antoine Schaller"
+      },
+      "source": "./skills/shopify",
+      "category": "development",
+      "skills": ["./translations", "./liquid-patterns", "./theme-dev"]
+    },
+    {
+      "name": "supabase-skills",
+      "description": "Supabase: migrations, RLS policies, database patterns",
+      "version": "1.0.0",
+      "author": {
+        "name": "Antoine Schaller"
+      },
+      "source": "./skills/supabase",
+      "category": "development",
+      "skills": ["./migrations", "./rls-policies"]
+    },
+    {
+      "name": "analytics-skills",
+      "description": "Analytics: GTM management, GSC analysis, tracking",
+      "version": "1.0.0",
+      "author": {
+        "name": "Antoine Schaller"
+      },
+      "source": "./skills/analytics",
+      "category": "analytics",
+      "skills": ["./gtm-management", "./gsc-analysis"]
+    },
+    {
+      "name": "lead-gen-skills",
+      "description": "Lead generation: scoring, SLA tracking, funnel optimization",
+      "version": "1.0.0",
+      "author": {
+        "name": "Antoine Schaller"
+      },
+      "source": "./skills/lead-gen",
+      "category": "business",
+      "skills": ["./lead-scoring", "./sla-tracking"]
+    }
+  ]
+}
