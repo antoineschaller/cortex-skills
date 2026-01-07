@@ -196,6 +196,23 @@ SUPABASE_DB_PASSWORD_STAGING="your-password"
 - Check network/VPN connection
 - Verify credentials are correct
 
+### Resetting Remote Database (Staging)
+
+**WARNING**: `supabase db reset` has `--local=true` by default!
+
+```bash
+# WRONG - This resets BOTH local AND staging!
+supabase db reset --db-url "postgresql://staging..."
+
+# CORRECT - Only reset staging
+supabase db reset --db-url "postgresql://staging..." --local=false
+```
+
+For staging schema reset, prefer using the sync script which handles this correctly:
+```bash
+./.claude/skills/dev-environment-manager/scripts/sync-prod-to-staging.sh --confirm --yes
+```
+
 ## Vercel Environment Variables
 
 ### Fix Trailing Newlines

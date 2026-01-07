@@ -7,7 +7,7 @@ Comprehensive guide for deploying the Ballee mobile app to iOS (TestFlight/App S
 | Platform | CI/CD | Local Deploy | Distribution |
 |----------|-------|--------------|--------------|
 | **iOS** | Xcode Cloud | Fastlane / xcodebuild | TestFlight, App Store |
-| **Android** | GitLab CI | Fastlane / Gradle | Firebase App Distribution, Play Store |
+| **Android** | GitHub Actions | Fastlane / Gradle | Firebase App Distribution, Play Store |
 
 ## Prerequisites
 
@@ -274,6 +274,118 @@ Options:
 - `--apk` - Build APK instead of AAB
 - `--firebase` - Deploy to Firebase App Distribution
 - `--playstore` - Deploy to Play Store
+
+## Android CI/CD with GitHub Actions
+
+### Overview
+
+Android deployments are fully automated via GitHub Actions with:
+- **Workload Identity Federation** for keyless Google Cloud authentication
+- Automatic builds on push to `main` and `dev`
+- Firebase App Distribution for internal testing
+- Play Store deployment on version tags
+- Staged production rollouts (10% → 50% → 100%)
+
+### Workflow Triggers
+
+| Trigger | Action |
+|---------|--------|
+| Push to `dev` | Build and validate |
+| Push to `main` | Build + Deploy to Firebase |
+| PR to `main`/`dev` | Build and validate |
+| Tag `v*.*.*` | Build + Deploy to Play Store (internal) |
+| Tag `release/*` | Promote to Production (10% rollout) |
+| Manual dispatch | Configurable deployment |
+
+### Setup Scripts
+
+Run these scripts to set up Android CI/CD:
+
+```bash
+# 1. Create release keystore and local key.properties
+./scripts/setup-android-keystore.sh
+
+# 2. Set up Workload Identity Federation (requires gcloud CLI)
+./scripts/setup-gcloud-wif.sh
+
+# 3. Configure GitHub repository secrets
+./scripts/setup-android-secrets.sh
+```
+
+### Required GitHub Secrets
+
+| Secret | Description | How to Obtain |
+|--------|-------------|---------------|
+| `ANDROID_KEYSTORE_BASE64` | Base64-encoded keystore | `openssl base64 < keystore.jks` |
+| `ANDROID_KEYSTORE_PASSWORD` | Keystore password | Set during keystore creation |
+| `ANDROID_KEY_ALIAS` | Key alias | Usually `ballee` |
+| `ANDROID_KEY_PASSWORD` | Key password | Set during keystore creation |
+| `SUPABASE_URL` | Production Supabase URL | `.env.local` |
+| `SUPABASE_ANON_KEY` | Production anon key | `.env.local` |
+| `FIREBASE_APP_ID_ANDROID` | Firebase App ID | Firebase Console |
+| `FIREBASE_SERVICE_ACCOUNT` | Firebase SA JSON | Firebase Console |
+| `PLAY_STORE_SERVICE_ACCOUNT` | Play Store SA JSON | Google Play Console |
+
+### Workload Identity Federation (Keyless Auth)
+
+Instead of storing long-lived service account JSON keys, we use OIDC-based keyless authentication:
+
+- **No secrets to rotate** - Short-lived credentials (1 hour expiry)
+- **Fine-grained scoping** - Restricted to specific repository/branch
+- **Google's recommended approach** - More secure than service account keys
+
+The `setup-gcloud-wif.sh` script automates the WIF setup:
+1. Creates Workload Identity Pool
+2. Creates OIDC Provider for GitHub
+3. Creates service account with proper IAM bindings
+
+### Manual Workflow Trigger
+
+Trigger a deployment manually via GitHub CLI:
+```bash
+# Deploy to Firebase
+gh workflow run android-deploy.yml -f deploy_target=firebase
+
+# Deploy to Play Store (internal)
+gh workflow run android-deploy.yml -f deploy_target=playstore-internal
+
+# Promote to production
+gh workflow run android-deploy.yml -f deploy_target=playstore-production
+```
+
+### Staged Rollouts
+
+Production releases use staged rollouts for safety:
+
+```bash
+# Promote with 10% rollout (default)
+fastlane promote_to_production
+
+# Increase to 50%
+fastlane increase_rollout rollout:0.5
+
+# Full rollout
+fastlane increase_rollout rollout:1.0
+```
+
+### CI/CD Files
+
+| File | Purpose |
+|------|---------|
+| `.github/workflows/android-deploy.yml` | Main CI/CD workflow |
+| `scripts/setup-android-keystore.sh` | Keystore creation script |
+| `scripts/setup-gcloud-wif.sh` | Workload Identity Federation setup |
+| `scripts/setup-android-secrets.sh` | GitHub secrets configuration |
+
+### First-Time Setup Checklist
+
+1. [ ] Run `./scripts/setup-android-keystore.sh` to create keystore
+2. [ ] Back up keystore file to 1Password
+3. [ ] Run `./scripts/setup-gcloud-wif.sh` (requires gcloud CLI)
+4. [ ] Link service account in Google Play Console (Settings → API access)
+5. [ ] Run `./scripts/setup-android-secrets.sh` to configure GitHub
+6. [ ] Do first manual Play Store release (Google requirement)
+7. [ ] Test workflow with manual dispatch
 
 ## Environment Variables
 

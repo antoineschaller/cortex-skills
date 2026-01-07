@@ -1,7 +1,7 @@
 ---
-description: Service layer patterns for Ballee using BaseService, Result types, mappers, storage operations, and proper error handling. Use when creating services, implementing CRUD operations, handling file uploads, or managing business logic.
-version: "1.1.0"
-updated: "2025-12-11"
+description: Service layer patterns for Ballee using BaseService, Result types, mappers, storage operations, soft delete handling, and proper error handling. Use when creating services, implementing CRUD operations, handling file uploads, or managing business logic.
+version: "1.2.0"
+updated: "2026-01-06"
 ---
 
 # Service Patterns
@@ -303,6 +303,83 @@ this.logger.warn('Item not found', { id });
 this.logger.error('Database error', { error, context: { id, input } });
 ```
 
+## Soft Delete Pattern
+
+**CRITICAL**: Tables with `deleted_at` columns must ALWAYS filter soft-deleted records in queries.
+
+### Tables with Soft Delete
+
+| Table | Has deleted_at | Notes |
+|-------|---------------|-------|
+| clients | Yes | Filter in all queries |
+| conversations | Yes | Filter in all queries |
+| messages | Yes + is_deleted | Uses boolean flag |
+| organizations | Yes | Filter in all queries |
+| profile_posts | Yes | Filter in all queries |
+| cast_roles | Yes | Filter in all queries |
+
+### Soft Delete Query Pattern
+
+```typescript
+// ✅ CORRECT - Always filter soft-deleted records
+async getClientById(id: string): Promise<Result<Client>> {
+  const { data, error } = await this.client
+    .from('clients')
+    .select('*')
+    .eq('id', id)
+    .is('deleted_at', null)  // REQUIRED for soft-delete tables!
+    .single();
+  // ...
+}
+
+// ✅ CORRECT - Soft delete instead of hard delete
+async deleteClient(id: string): Promise<Result<void>> {
+  const { error } = await this.client
+    .from('clients')
+    .update({ deleted_at: new Date().toISOString() })
+    .eq('id', id)
+    .is('deleted_at', null);  // Don't re-delete already deleted
+  // ...
+}
+
+// ❌ WRONG - Missing soft delete filter
+async getClientById(id: string): Promise<Result<Client>> {
+  const { data, error } = await this.client
+    .from('clients')
+    .select('*')
+    .eq('id', id)
+    .single();  // BUG: May return soft-deleted record!
+}
+
+// ❌ WRONG - Hard delete on soft-delete table
+async deleteClient(id: string): Promise<Result<void>> {
+  const { error } = await this.client
+    .from('clients')
+    .delete()  // BUG: Should soft delete!
+    .eq('id', id);
+}
+```
+
+### BaseCrudService for Soft Delete
+
+For services that need full CRUD with soft delete, use `BaseCrudService`:
+
+```typescript
+import { BaseCrudService } from '@kit/shared/services';
+
+export class ClientService extends BaseCrudService<Client> {
+  constructor(client: SupabaseClient<Database>) {
+    super(client, {
+      tableName: 'clients',
+      entityName: 'Client',
+      enableSoftDelete: true,
+      // softDeleteColumn defaults to 'deleted_at'
+    });
+  }
+  // Inherits: findById, findMany, create, update, delete (soft), softDelete
+}
+```
+
 ## Storage Service Pattern
 
 Services that handle file uploads should use `StorageUrlService` for consistent signed URL generation.
@@ -511,13 +588,20 @@ export class DocumentService extends BaseService {
 // Bucket names - ALWAYS use these constants
 import { StorageBuckets, SignedUrlExpiry } from '@kit/shared/storage';
 
+// Account/Profile
+StorageBuckets.ACCOUNT_IMAGE          // 'account_image'
+StorageBuckets.PROFILE_MEDIA          // 'profile-media' (public bucket)
 StorageBuckets.DANCER_MEDIA           // 'dancer-media'
+
+// Documents
 StorageBuckets.VENUE_DOCUMENTS        // 'venue-documents'
+StorageBuckets.PRODUCTION_DOCUMENTS   // 'production-documents'
 StorageBuckets.LEGAL_DOCUMENTS        // 'legal-documents'
 StorageBuckets.REIMBURSEMENT_DOCUMENTS // 'reimbursement-documents'
-StorageBuckets.REIMBURSEMENTS         // 'reimbursements' (legacy)
+
+// Legal/Compliance
 StorageBuckets.CONTRACTS              // 'contracts'
-StorageBuckets.PRODUCTION_DOCUMENTS   // 'production-documents'
+StorageBuckets.IDENTITY_DOCUMENTS     // 'identity-documents'
 StorageBuckets.INVOICE_PDFS           // 'invoice-pdfs'
 
 // Expiry times - use instead of magic numbers
@@ -526,6 +610,58 @@ SignedUrlExpiry.DOWNLOAD           // 86400 (24 hours) - download links
 SignedUrlExpiry.PROFILE_PHOTO      // 604800 (7 days) - stored in DB
 SignedUrlExpiry.ADMIN_REVIEW       // 86400 (24 hours) - admin viewing
 SignedUrlExpiry.MAX                // 604800 (7 days) - Supabase limit
+```
+
+### Path Extraction Utilities
+
+```typescript
+import { extractStoragePath, StoragePathService, StorageBuckets } from '@kit/shared/storage';
+
+// Extract path from signed URL, public URL, or bucket-prefixed path
+const path = extractStoragePath(signedUrl, StorageBuckets.IDENTITY_DOCUMENTS);
+// Result: 'user-123/doc.pdf' (bucket prefix stripped)
+
+// Detect bucket from URL
+const bucket = StoragePathService.detectBucket(url);
+
+// Validate path (no traversal, not absolute)
+const result = StoragePathService.validate(storagePath);
+```
+
+### Thumbnail Generation
+
+```typescript
+import { ThumbnailSizes, generatePublicThumbnailUrl } from '@kit/shared/storage';
+
+// Preset sizes for signed URL transforms
+ThumbnailSizes.SMALL   // { width: 100, height: 100, quality: 80 }
+ThumbnailSizes.MEDIUM  // { width: 200, height: 200, quality: 80 }
+ThumbnailSizes.LARGE   // { width: 400, height: 400, quality: 85 }
+ThumbnailSizes.XLARGE  // { width: 800, height: 800, quality: 90 }
+
+// For signed URLs - use transform option
+const result = await storageService.getSignedUrl(bucket, path, {
+  transform: ThumbnailSizes.MEDIUM,
+});
+
+// For public bucket URLs - use generatePublicThumbnailUrl
+const thumbnailUrl = generatePublicThumbnailUrl(publicUrl, { width: 200, height: 200 });
+```
+
+### URL Storage Best Practice
+
+**CRITICAL**: Always store raw storage paths in the database, never signed URLs (they expire).
+
+```typescript
+// ✅ CORRECT - Store raw path
+await client.from('documents').insert({
+  storage_path: 'user-123/photo.jpg',  // Raw path only
+});
+
+// ❌ WRONG - Storing signed URL (will expire!)
+await client.from('documents').insert({
+  file_url: signedUrl,  // This will break after expiry!
+});
 ```
 
 ### Storage Anti-Patterns

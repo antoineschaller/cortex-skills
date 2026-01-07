@@ -1,6 +1,6 @@
 # Cortex Skills
 
-Reusable Claude Code skills for e-commerce, analytics, development, and project-specific workflows.
+Reusable Claude Code skills and agents for e-commerce, analytics, development, and project-specific workflows.
 
 ## Installation
 
@@ -106,10 +106,11 @@ Ballee dance production management: database, Flutter mobile, web patterns, inte
 | sentry-error-manager | Fetch, analyze, resolve production errors |
 | visual-testing | Puppeteer screenshots for UI verification |
 
-**Integrations (5 skills)**
+**Integrations (6 skills)**
 | Skill | Description |
 |-------|-------------|
 | airtable-sync-specialist | Airtable sync, cache, duplicate prevention |
+| fever-sync-specialist | Fever Partners API sync for plans, reviews, venues |
 | meteor-sync-specialist | Sync Meteor MongoDB to Supabase |
 | supabase-realtime-specialist | Real-time subscriptions and presence |
 | supabase-email-templates | Deploy Supabase Auth email templates |
@@ -123,6 +124,25 @@ Ballee dance production management: database, Flutter mobile, web patterns, inte
 | wip-lifecycle-manager | WIP document lifecycle management |
 | bulk-support-message | Send bulk messages via Ballee Support chat |
 
+## Agents
+
+Agents are autonomous task executors that combine multiple skills for complex workflows.
+
+### ballee-agents
+
+| Agent | Model | Description |
+|-------|-------|-------------|
+| quality-reviewer | Sonnet | Comprehensive quality gate: automated checks (typecheck, lint, format, tests, build), pattern validation, accessibility, documentation, security audit |
+| database-specialist | Haiku | Database schema design, migrations, RLS policies, query optimization |
+| db-performance-agent | Haiku | Scan and fix N+1 queries, sequential queries, unbounded fetches |
+| sentry-fixer-agent | Sonnet | Autonomous Sentry error investigation, root cause analysis, fixes |
+
+**Quality Reviewer Checks:**
+- Automated: format, lint, typecheck, tests, build
+- Scripts: WIP validation, JSON keys, migration lint, RLS analysis, i18n, lockfile, DB types, dependency audit
+- Patterns: Services, Actions, Components, Migrations, RLS, Tests, Flutter
+- Required: Accessibility (jsx-a11y), Error Handling, Documentation, Sentry comments
+
 ## Usage
 
 Once installed, skills automatically activate when Claude detects relevant context:
@@ -133,6 +153,7 @@ Once installed, skills automatically activate when Claude detects relevant conte
 - **"How should I score this lead?"** → lead-scoring skill
 - **"Create a Supabase migration with RLS"** → ballee database-migration-manager skill
 - **"Build a Flutter module with Riverpod"** → ballee flutter-development skill
+- **"Run quality review on my changes"** → ballee quality-reviewer agent
 
 ## Structure
 
@@ -158,7 +179,13 @@ cortex-skills/
 │       ├── database-migration-manager/
 │       ├── flutter-development/
 │       ├── api-patterns/
-│       └── ... (30 skills)
+│       └── ... (32 skills)
+├── agents/
+│   └── ballee/
+│       ├── quality-reviewer.md
+│       ├── database-specialist.md
+│       ├── db-performance-agent.md
+│       └── sentry-fixer-agent.md
 └── README.md
 ```
 

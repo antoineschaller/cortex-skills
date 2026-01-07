@@ -1,7 +1,7 @@
 ---
 description: Document and PDF patterns for Ballee using @kit/documents for document management and @kit/pdf-core for PDF generation. Use when working with file uploads, document viewers, or generating PDFs.
-version: "1.0.0"
-updated: "2025-12-25"
+version: "1.1.0"
+updated: "2026-01-06"
 ---
 
 # Document & PDF Patterns
@@ -427,26 +427,174 @@ return new Response(nodeStreamToWebStream(stream), {
 
 ---
 
-## Storage Integration
+## Unified Storage Library (@kit/shared/storage)
 
-Use `@kit/shared/storage` constants with document operations:
+The unified storage library provides centralized utilities for storage URLs, path extraction, and thumbnail generation.
+
+### Exports
 
 ```typescript
-import { StorageBuckets, SignedUrlExpiry } from '@kit/shared/storage';
+import {
+  // URL Service
+  StorageUrlService,
+  createStorageUrlService,
+  StorageBuckets,
+  SignedUrlExpiry,
+  type StorageBucket,
+  type SignedUrlOptions,
 
-// Available buckets
+  // Path Service
+  StoragePathService,
+  extractStoragePath,
+  generatePublicThumbnailUrl,
+
+  // Constants
+  ThumbnailSizes,
+  type ThumbnailSize,
+} from '@kit/shared/storage';
+```
+
+### Storage Buckets
+
+```typescript
+// Account/Profile
+StorageBuckets.ACCOUNT_IMAGE          // 'account_image'
+StorageBuckets.PROFILE_MEDIA          // 'profile-media' (public)
 StorageBuckets.DANCER_MEDIA           // 'dancer-media'
+
+// Documents
 StorageBuckets.VENUE_DOCUMENTS        // 'venue-documents'
 StorageBuckets.PRODUCTION_DOCUMENTS   // 'production-documents'
-StorageBuckets.REIMBURSEMENT_DOCUMENTS // 'reimbursement-documents'
 StorageBuckets.LEGAL_DOCUMENTS        // 'legal-documents'
-StorageBuckets.CONTRACTS              // 'contracts'
-StorageBuckets.INVOICE_PDFS           // 'invoice-pdfs'
+StorageBuckets.REIMBURSEMENT_DOCUMENTS // 'reimbursement-documents'
 
-// Expiry times
-SignedUrlExpiry.IMMEDIATE_DISPLAY  // 3600 (1 hour)
-SignedUrlExpiry.DOWNLOAD           // 86400 (24 hours)
-SignedUrlExpiry.PROFILE_PHOTO      // 604800 (7 days)
+// Legal/Compliance
+StorageBuckets.CONTRACTS              // 'contracts'
+StorageBuckets.IDENTITY_DOCUMENTS     // 'identity-documents'
+StorageBuckets.INVOICE_PDFS           // 'invoice-pdfs'
+```
+
+### Signed URL Expiry Times
+
+```typescript
+SignedUrlExpiry.IMMEDIATE_DISPLAY  // 3600 (1 hour) - UI display
+SignedUrlExpiry.DOWNLOAD           // 86400 (24 hours) - download links
+SignedUrlExpiry.PROFILE_PHOTO      // 604800 (7 days) - cached URLs
+SignedUrlExpiry.ADMIN_REVIEW       // 86400 (24 hours) - admin views
+SignedUrlExpiry.MAX                // 604800 (7 days max)
+SignedUrlExpiry.MIN                // 60 (minimum)
+```
+
+### StorageUrlService
+
+```typescript
+import { StorageUrlService, StorageBuckets, SignedUrlExpiry } from '@kit/shared/storage';
+
+const service = new StorageUrlService(client);
+
+// Single signed URL
+const result = await service.getSignedUrl(
+  StorageBuckets.VENUE_DOCUMENTS,
+  'venue-123/document.pdf',
+  { expiresIn: SignedUrlExpiry.DOWNLOAD }
+);
+
+// Batch signed URLs (more efficient for multiple files)
+const results = await service.getBatchSignedUrls(
+  StorageBuckets.VENUE_DOCUMENTS,
+  ['path1.pdf', 'path2.pdf'],
+  { expiresIn: SignedUrlExpiry.IMMEDIATE_DISPLAY }
+);
+
+// Enrich items with signed URLs
+const docsWithUrls = await service.enrichWithSignedUrls(
+  StorageBuckets.VENUE_DOCUMENTS,
+  documents,
+  (doc) => doc.storage_path,
+  (doc, url) => ({ ...doc, signedUrl: url }),
+);
+
+// With thumbnail transform
+const result = await service.getSignedUrl(
+  StorageBuckets.DANCER_MEDIA,
+  'user-123/photo.jpg',
+  {
+    expiresIn: SignedUrlExpiry.IMMEDIATE_DISPLAY,
+    transform: ThumbnailSizes.MEDIUM,
+  }
+);
+```
+
+### StoragePathService (Path Extraction)
+
+Extract storage paths from signed URLs, public URLs, or bucket-prefixed paths:
+
+```typescript
+import { StoragePathService, extractStoragePath, StorageBuckets } from '@kit/shared/storage';
+
+// Extract from signed URL
+const path = extractStoragePath(
+  'https://xxx.supabase.co/storage/v1/object/sign/identity-documents/user-123/doc.pdf?token=...',
+  StorageBuckets.IDENTITY_DOCUMENTS
+);
+// Result: 'user-123/doc.pdf'
+
+// Extract from bucket-prefixed path
+const path2 = extractStoragePath('identity-documents/user-123/doc.pdf');
+// Result: 'user-123/doc.pdf'
+
+// Detect bucket from path
+const bucket = StoragePathService.detectBucket(url);
+// Result: 'identity-documents'
+
+// Validate path
+const result = StoragePathService.validate(storagePath);
+if (result.isSuccess) {
+  // Use validated path
+}
+```
+
+### Thumbnail Generation
+
+```typescript
+import { ThumbnailSizes, generatePublicThumbnailUrl } from '@kit/shared/storage';
+
+// Preset sizes
+ThumbnailSizes.SMALL   // { width: 100, height: 100, quality: 80 }
+ThumbnailSizes.MEDIUM  // { width: 200, height: 200, quality: 80 }
+ThumbnailSizes.LARGE   // { width: 400, height: 400, quality: 85 }
+ThumbnailSizes.XLARGE  // { width: 800, height: 800, quality: 90 }
+
+// For signed URLs - use transform option
+const result = await service.getSignedUrl(bucket, path, {
+  transform: ThumbnailSizes.MEDIUM,
+});
+
+// For public URLs - use generatePublicThumbnailUrl
+const thumbnailUrl = generatePublicThumbnailUrl(publicUrl, {
+  width: 200,
+  height: 200,
+  quality: 80,
+});
+```
+
+### URL Storage Best Practice
+
+**CRITICAL**: Always store raw storage paths in the database, never signed URLs (they expire).
+
+```typescript
+// ✅ CORRECT - Store raw path
+await client.from('documents').insert({
+  storage_path: 'user-123/photo.jpg',  // Raw path only
+});
+
+// ❌ WRONG - Storing signed URL (will expire!)
+await client.from('documents').insert({
+  file_url: signedUrl,  // This will break after expiry!
+});
+
+// Generate signed URLs on-demand when displaying
+const result = await service.getSignedUrl(bucket, doc.storage_path);
 ```
 
 ---

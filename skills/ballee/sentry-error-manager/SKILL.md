@@ -373,3 +373,207 @@ find apps/web/app -name "error.tsx" | head -20
 # View Sentry config
 cat apps/web/sentry.client.config.ts
 ```
+
+---
+
+## Flutter Mobile App Error Handling
+
+The mobile app uses a comprehensive Sentry architecture with multiple layers of error capture.
+
+### Architecture Overview
+
+```
+apps/mobile/lib/core/sentry/
+├── sentry_service.dart              # Main service with initialization
+├── sentry_config.dart               # Configuration constants
+├── user_context_manager.dart        # User identification
+├── filters/
+│   └── pii_filter.dart              # PII sanitization
+├── interceptors/
+│   └── sentry_dio_interceptor.dart  # HTTP request/response tracking
+├── observers/
+│   ├── sentry_navigator_observer.dart # Navigation breadcrumbs
+│   └── sentry_riverpod_observer.dart  # Provider error tracking
+└── widgets/
+    └── sentry_error_boundary.dart   # Error boundary with feedback
+```
+
+### Why This Architecture?
+
+By default, `SentryFlutter.init` only captures **uncaught exceptions**. In Flutter with Riverpod, many errors are caught by the framework:
+
+1. **Riverpod AsyncNotifier**: Errors go into `AsyncValue.error` state but don't propagate as uncaught exceptions
+2. **Try-catch blocks**: Errors caught and not rethrown are never seen by Sentry
+3. **PostgrestException**: Supabase database errors are caught by Riverpod providers
+4. **HTTP errors**: Dio catches responses and doesn't throw by default
+
+### Core Components
+
+#### 1. SentryService (Initialization)
+
+**Location**: `apps/mobile/lib/core/sentry/sentry_service.dart`
+
+Production-grade initialization with:
+- 100% error sample rate (capture all errors)
+- 20% traces sample rate (performance monitoring)
+- PII filtering via `beforeSend` hook
+- Native crash handling enabled
+- ANR (Application Not Responding) detection
+- User interaction breadcrumbs
+
+```dart
+// In main.dart
+await SentryService.initialize(
+  dsn: env.sentryDsn,
+  environment: env.name,
+  appRunner: () => run(sharedPrefs, useSentryObserver: true),
+);
+```
+
+#### 2. SentryRiverpodObserver (Provider Errors)
+
+**Location**: `apps/mobile/lib/core/sentry/observers/sentry_riverpod_observer.dart`
+
+Captures errors from Riverpod providers:
+- `PostgrestException` from Supabase queries
+- `AuthException` from authentication failures
+- `StorageException` from file upload errors
+- Tags errors with provider name for debugging
+- Filters cancelled/aborted operations
+
+```dart
+ProviderScope(
+  observers: useSentryObserver ? [SentryRiverpodObserver()] : [],
+  child: MyApp(...),
+)
+```
+
+#### 3. SentryDioInterceptor (HTTP Errors)
+
+**Location**: `apps/mobile/lib/core/sentry/interceptors/sentry_dio_interceptor.dart`
+
+Tracks HTTP requests and captures failures:
+- Request/response breadcrumbs for debugging
+- Captures 5xx errors and unexpected 4xx (excludes 401/404)
+- Sanitizes URLs (removes sensitive query params)
+- Included in `HttpClient` automatically
+
+#### 4. BalleeSentryNavigatorObserver (Navigation)
+
+**Location**: `apps/mobile/lib/core/sentry/observers/sentry_navigator_observer.dart`
+
+Tracks navigation for error context:
+- Breadcrumbs for route changes
+- Sets `current_screen` tag on errors
+- Optional performance transactions
+
+```dart
+// In router.dart
+observers: [
+  if (SentryService.isInitialized) BalleeSentryNavigatorObserver(),
+],
+```
+
+#### 5. SentryUserContextManager (User Identity)
+
+**Location**: `apps/mobile/lib/core/sentry/user_context_manager.dart`
+
+Associates errors with users:
+- Sets user ID and masked email on login
+- Clears user on logout
+- Tracks subscription status
+
+```dart
+// In user_state_notifier.dart
+await SentryUserContextManager.setUser(user);  // On login
+await SentryUserContextManager.clearUser();    // On logout
+```
+
+#### 6. PiiFilter (Privacy Protection)
+
+**Location**: `apps/mobile/lib/core/sentry/filters/pii_filter.dart`
+
+Sanitizes sensitive data before sending to Sentry:
+- Redacts passwords, tokens, API keys
+- Masks email addresses and phone numbers
+- Applied to events and breadcrumbs
+
+#### 7. SentryErrorBoundary (Widget Error UI)
+
+**Location**: `apps/mobile/lib/core/sentry/widgets/sentry_error_boundary.dart`
+
+Error boundary widget with user feedback:
+- Catches Flutter errors in widget subtree
+- Shows user-friendly error UI
+- Allows users to submit feedback via `SentryUserFeedback`
+
+```dart
+SentryErrorBoundary(
+  child: SomeWidget(),
+)
+```
+
+### Configuration Constants
+
+| Option | Value | Reason |
+|--------|-------|--------|
+| `errorSampleRate` | 1.0 | Capture 100% of errors |
+| `tracesSampleRate` | 0.2 | Sample 20% for performance |
+| `maxBreadcrumbs` | 100 | Full context trail |
+| `anrTimeout` | 5 seconds | Detect frozen UI |
+| `enableNativeCrashHandling` | true | iOS/Android crashes |
+
+### Supabase Exception Types
+
+| Exception Type | Source | Example Cause |
+|---------------|--------|---------------|
+| `PostgrestException` | Database queries | RLS policy violation, constraint error |
+| `AuthException` | Authentication | Invalid token, expired session |
+| `StorageException` | File storage | Bucket not found, permission denied |
+
+### Error Capture Matrix
+
+| Error Source | Component | Auto-Captured |
+|--------------|-----------|---------------|
+| Uncaught Flutter errors | `SentryService` zone guard | Yes |
+| Riverpod provider errors | `SentryRiverpodObserver` | Yes |
+| HTTP 5xx/4xx errors | `SentryDioInterceptor` | Yes |
+| Navigation context | `BalleeSentryNavigatorObserver` | Yes (breadcrumbs) |
+| Widget subtree errors | `SentryErrorBoundary` | Yes |
+| Try-catch swallowed | Manual capture needed | No |
+
+### Manual Error Reporting
+
+For errors in try-catch blocks that shouldn't be rethrown:
+
+```dart
+import 'package:ballee/core/sentry/sentry_service.dart';
+
+try {
+  await someOperation();
+} catch (e, stackTrace) {
+  // Report to Sentry but handle gracefully
+  await SentryService.captureException(e, stackTrace: stackTrace);
+  // Show user-friendly error
+  showSnackBar('Operation failed');
+}
+```
+
+### Quick Reference (Flutter)
+
+```bash
+# View Sentry service
+cat apps/mobile/lib/core/sentry/sentry_service.dart
+
+# View Riverpod observer
+cat apps/mobile/lib/core/sentry/observers/sentry_riverpod_observer.dart
+
+# View HTTP interceptor
+cat apps/mobile/lib/core/sentry/interceptors/sentry_dio_interceptor.dart
+
+# Check for manual Sentry captures
+grep -r "SentryService.captureException" apps/mobile/lib
+
+# View all Sentry components
+ls -la apps/mobile/lib/core/sentry/
+```
