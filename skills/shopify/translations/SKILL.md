@@ -5,32 +5,20 @@ description: Manage Shopify store translations with French as source language. U
 
 # Shopify Translations Management
 
-Manage Shopify translations with French (fr_original) as the source language, translating to German (de_fixed), Italian (it_fixed), and English (en_fixed).
+Two separate translation systems - use the right one for each case.
 
-## When to Use
+## Two Translation Systems
 
-- User mentions "translations", "translate", "localization", "i18n"
-- User wants to extract translations from Shopify
-- User needs to update or fix translations
-- User asks about multi-language content
-- User mentions French/German/Italian/English language work
+| System | Use For | Location |
+|--------|---------|----------|
+| **API Translations** | Merchant-editable content, block settings | `translations-to-edit.json` |
+| **Locale Files** | Hardcoded theme text, labels, buttons | `shopify-theme/locales/*.json` |
 
-## Translation Architecture
+## 1. API Translations (Merchant Content)
 
-### Source Language: French (fr_original)
-### Target Languages:
-- German (de_fixed)
-- Italian (it_fixed)
-- English (en_fixed)
+French (fr_original) as source → German, Italian, English.
 
-### Status Values:
-- `pending` - Not yet translated
-- `completed` - Ready to publish
-- `verified` - Reviewed and approved
-
-## Translation Structure
-
-Each entry in translation files follows this format:
+### Structure
 
 ```json
 {
@@ -45,56 +33,96 @@ Each entry in translation files follows this format:
 }
 ```
 
-## Common Commands
+### Status Values
+- `pending` - Not yet translated
+- `completed` - Ready to publish
+- `verified` - Reviewed and approved
+
+### Commands
 
 ```bash
-# Extract current translations from Shopify
-npm run translations:myarmy:extract
-
-# Generate review report (identify missing/corrupted translations)
-npm run translations:myarmy:review
-
-# Auto-translate pending items using OpenAI
-OPENAI_API_KEY="sk-..." npm run translations:myarmy:translate
-
-# Publish translations to Shopify
-npm run translations:myarmy:publish
-
-# Create backup of current translations
-npm run translations:myarmy:backup
-
-# Full workflow: extract → filter → review
-npm run translations:myarmy:workflow
+npm run translations:myarmy:extract   # Extract from Shopify
+npm run translations:myarmy:review    # Generate review report
+npm run translations:myarmy:translate # Auto-translate (needs OPENAI_API_KEY)
+npm run translations:myarmy:publish   # Publish to Shopify
+npm run translations:myarmy:backup    # Create backup
+npm run translations:myarmy:workflow  # Full workflow
 ```
 
-## Workflow: Extract → Fix → Publish
+## 2. Locale Files (Theme Code)
 
-1. **Extract** all translations from Shopify
-2. **Review** what needs fixing (check review-report.md)
-3. **Fix** corrupted de_fixed, it_fixed, en_fixed fields
-4. **Publish** corrected translations
+For hardcoded theme text only - stored in Git.
 
-## Key Rules
+### File Locations
 
-### DO:
-- Keep French as source (fr_original field)
-- Maintain semantic key structure
-- Review before publishing
-- Create backups before major changes
+```
+shopify-theme/locales/
+├── en.default.json  # English source
+├── fr.json          # French
+├── de.json          # German
+└── it.json          # Italian
+```
 
-### DON'T:
-- Edit fr_original field directly
-- Mix manual edits with auto-translation
-- Skip review step
-- Use corrupted translations
+### Key Structure (3-level nested)
+
+```json
+{
+  "products": {
+    "benefits": {
+      "lifetime_guarantee": "Lifetime Guarantee",
+      "lifetime_description": "Yes, you read that right..."
+    }
+  }
+}
+```
+
+### Usage in Liquid
+
+```liquid
+{{ 'products.benefits.lifetime_guarantee' | t }}
+{{ 'products.benefits.lifetime_description' | t: default: 'Fallback' }}
+```
+
+### Deployment
+
+```bash
+# Push locale files to production
+shopify theme push --theme=185946079581 --store=087ffd-4a.myshopify.com \
+  --allow-live --only="locales/"
+```
+
+## When to Use Which
+
+| Content Type | Use |
+|--------------|-----|
+| Section titles, labels | Locale files |
+| Error messages | Locale files |
+| Button text | Locale files |
+| Block settings content | API translations |
+| Product descriptions | API translations |
+| Merchant-editable text | API translations |
 
 ## Swiss Military Terminology
 
-Use correct Swiss military terms:
-- **badge** (NOT "écusson")
-- **section** (NOT "peloton")
+Always use:
+- ✅ **badge** (NOT "écusson")
+- ✅ **section** (NOT "peloton")
 
-## Environment Variables Required
+## Key Rules
+
+**DO:**
+- Keep French as source (fr_original)
+- Keep all 4 locale files in sync
+- Review before publishing
+- Create backups before major changes
+
+**DON'T:**
+- Edit fr_original directly
+- Mix the two translation systems
+- Skip review step
+- Forget to update all language files
+
+## Environment Variables
 
 ```bash
 SHOPIFY_ACCESS_TOKEN=shpat_...
