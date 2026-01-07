@@ -167,21 +167,41 @@ The `templates/` folder contains **framework-agnostic** versions of skills and a
 
 ### Available Templates
 
-#### Agents
+#### Agents (6 templates)
 
-| Template | Description |
-|----------|-------------|
-| `quality-reviewer` | Comprehensive quality gate - customize commands, file patterns, checklists |
-| `database-specialist` | Database expert - customize for PostgreSQL, MySQL, or your ORM |
-| `sentry-fixer` | Error investigation - customize for Sentry, Bugsnag, Rollbar, etc. |
+| Template | Model | Description |
+|----------|-------|-------------|
+| `quality-reviewer` | Sonnet | Comprehensive quality gate - customize commands, file patterns, checklists |
+| `database-specialist` | Haiku | Database expert - customize for PostgreSQL, MySQL, or your ORM |
+| `sentry-fixer` | Sonnet | Error investigation - customize for Sentry, Bugsnag, Rollbar, etc. |
+| `db-performance` | Haiku | N+1 detection, sequential query optimization, unbounded fetch prevention |
+| `code-reviewer` | Sonnet | PR review with architecture, security, performance, and quality checks |
+| `security-auditor` | Sonnet | OWASP top 10, dependency scan, secret detection, RLS audit |
 
-#### Skills
+#### Skills (11 templates)
 
+**Core Patterns**
 | Template | Description |
 |----------|-------------|
 | `api-patterns` | Server action patterns - customize for Next.js, Express, Fastify |
 | `service-patterns` | Service layer with Result types - customize for your ORM |
 | `test-patterns` | Testing patterns - customize for Vitest, Jest, Playwright |
+| `ui-patterns` | Component architecture, accessibility, Server Components |
+| `error-handling` | Error boundaries, global handlers, retry patterns, logging |
+
+**Database & Security**
+| Template | Description |
+|----------|-------------|
+| `db-anti-patterns` | N+1 detection rules, sequential queries, unbounded fetches |
+| `rls-security` | Row-level security patterns for multi-tenant apps |
+| `auth-patterns` | Session vs JWT, RBAC, OAuth, password hashing |
+
+**Infrastructure & State**
+| Template | Description |
+|----------|-------------|
+| `cicd-patterns` | GitHub Actions, caching, preview deploys, rollback strategies |
+| `i18n-patterns` | Translations, pluralization, RTL support, workflow |
+| `state-management` | Server state (React Query), client state (Zustand), URL state |
 
 ### Template vs Project-Specific
 
@@ -198,13 +218,24 @@ cortex-skills/
 │   └── marketplace.json
 ├── templates/                    # Generic templates for any project
 │   ├── agents/
-│   │   ├── quality-reviewer.md
-│   │   ├── database-specialist.md
-│   │   └── sentry-fixer.md
+│   │   ├── quality-reviewer.md   # Quality gate template
+│   │   ├── database-specialist.md # DB migrations/RLS template
+│   │   ├── sentry-fixer.md       # Error tracking template
+│   │   ├── db-performance.md     # Query optimization template
+│   │   ├── code-reviewer.md      # PR review template
+│   │   └── security-auditor.md   # Security audit template
 │   └── skills/
-│       ├── api-patterns/
-│       ├── service-patterns/
-│       └── test-patterns/
+│       ├── api-patterns/         # Server actions/endpoints
+│       ├── service-patterns/     # Service layer patterns
+│       ├── test-patterns/        # Testing strategies
+│       ├── ui-patterns/          # Component architecture
+│       ├── error-handling/       # Error management
+│       ├── db-anti-patterns/     # N+1 detection rules
+│       ├── rls-security/         # Row-level security
+│       ├── auth-patterns/        # Authentication/authorization
+│       ├── cicd-patterns/        # CI/CD pipelines
+│       ├── i18n-patterns/        # Internationalization
+│       └── state-management/     # State patterns
 ├── skills/                       # Project-specific skills
 │   ├── shopify/
 │   ├── supabase/
