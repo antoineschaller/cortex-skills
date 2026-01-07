@@ -155,37 +155,64 @@ Once installed, skills automatically activate when Claude detects relevant conte
 - **"Build a Flutter module with Riverpod"** → ballee flutter-development skill
 - **"Run quality review on my changes"** → ballee quality-reviewer agent
 
+## Templates (Generic/Reusable)
+
+The `templates/` folder contains **framework-agnostic** versions of skills and agents that any project can download and customize.
+
+### How to Use Templates
+
+1. **Copy** the template to your project's `.claude/` folder
+2. **Customize** the patterns, commands, and checklists for your tech stack
+3. **Rename** if needed to match your project conventions
+
+### Available Templates
+
+#### Agents
+
+| Template | Description |
+|----------|-------------|
+| `quality-reviewer` | Comprehensive quality gate - customize commands, file patterns, checklists |
+| `database-specialist` | Database expert - customize for PostgreSQL, MySQL, or your ORM |
+| `sentry-fixer` | Error investigation - customize for Sentry, Bugsnag, Rollbar, etc. |
+
+#### Skills
+
+| Template | Description |
+|----------|-------------|
+| `api-patterns` | Server action patterns - customize for Next.js, Express, Fastify |
+| `service-patterns` | Service layer with Result types - customize for your ORM |
+| `test-patterns` | Testing patterns - customize for Vitest, Jest, Playwright |
+
+### Template vs Project-Specific
+
+| Folder | Purpose | Example |
+|--------|---------|---------|
+| `templates/` | Generic, framework-agnostic | `templates/agents/quality-reviewer.md` |
+| `skills/ballee/` | Project-specific, ready to use | `skills/ballee/flutter-development/` |
+
 ## Structure
 
 ```
 cortex-skills/
 ├── .claude-plugin/
 │   └── marketplace.json
-├── skills/
-│   ├── shopify/
-│   │   ├── translations/
-│   │   ├── liquid-patterns/
-│   │   └── theme-dev/
-│   ├── supabase/
-│   │   ├── migrations/
-│   │   └── rls-policies/
-│   ├── analytics/
-│   │   ├── gtm-management/
-│   │   └── gsc-analysis/
-│   ├── lead-gen/
-│   │   ├── lead-scoring/
-│   │   └── sla-tracking/
-│   └── ballee/
-│       ├── database-migration-manager/
-│       ├── flutter-development/
+├── templates/                    # Generic templates for any project
+│   ├── agents/
+│   │   ├── quality-reviewer.md
+│   │   ├── database-specialist.md
+│   │   └── sentry-fixer.md
+│   └── skills/
 │       ├── api-patterns/
-│       └── ... (32 skills)
-├── agents/
+│       ├── service-patterns/
+│       └── test-patterns/
+├── skills/                       # Project-specific skills
+│   ├── shopify/
+│   ├── supabase/
+│   ├── analytics/
+│   ├── lead-gen/
 │   └── ballee/
-│       ├── quality-reviewer.md
-│       ├── database-specialist.md
-│       ├── db-performance-agent.md
-│       └── sentry-fixer-agent.md
+├── agents/                       # Project-specific agents
+│   └── ballee/
 └── README.md
 ```
 
