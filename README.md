@@ -178,12 +178,12 @@ The `templates/` folder contains **framework-agnostic** versions of skills and a
 | `code-reviewer` | Sonnet | PR review with architecture, security, performance, and quality checks |
 | `security-auditor` | Sonnet | OWASP top 10, dependency scan, secret detection, RLS audit |
 
-#### Skills (17 templates)
+#### Skills (19 templates)
 
 **Core Patterns**
 | Template | Description |
 |----------|-------------|
-| `api-patterns` | Server action patterns - customize for Next.js, Express, Fastify |
+| `api-patterns` | Server actions with pagination, versioning, rate limiting, webhooks, bulk operations |
 | `service-patterns` | Service layer with Result types - customize for your ORM |
 | `test-patterns` | Testing patterns - customize for Vitest, Jest, Playwright |
 | `ui-patterns` | Component architecture, accessibility, Server Components |
@@ -193,13 +193,14 @@ The `templates/` folder contains **framework-agnostic** versions of skills and a
 | Template | Description |
 |----------|-------------|
 | `db-anti-patterns` | N+1 detection rules, sequential queries, unbounded fetches |
-| `rls-security` | Row-level security patterns for multi-tenant apps |
-| `auth-patterns` | Session vs JWT, RBAC, OAuth, password hashing |
+| `rls-security` | Row-level security with bypass patterns, common bugs, debugging queries |
+| `auth-patterns` | MFA/2FA, password reset, account lockout, device/session management |
+| `data-management` | Zero-downtime migrations, GDPR/CCPA, soft delete, versioning, backups |
 
 **Mobile/Flutter**
 | Template | Description |
 |----------|-------------|
-| `flutter-patterns` | Architecture, Riverpod state management, navigation, error handling |
+| `flutter-patterns` | Offline-first, push notifications, biometrics, platform channels, flavors |
 | `flutter-testing` | Unit, widget, golden, integration tests with mocking |
 | `mobile-cicd` | Xcode Cloud, Fastlane, GitHub Actions, code signing, deployment |
 
@@ -209,12 +210,13 @@ The `templates/` folder contains **framework-agnostic** versions of skills and a
 | `logging-patterns` | Structured logging, tracing, metrics, log aggregation |
 | `caching-patterns` | In-memory, Redis, HTTP caching, invalidation strategies |
 | `background-jobs` | BullMQ, Inngest, scheduled tasks, workers, retries |
+| `production-readiness` | Health checks, graceful shutdown, feature flags, monitoring, runbooks |
 
 **Infrastructure & State**
 | Template | Description |
 |----------|-------------|
 | `cicd-patterns` | GitHub Actions, caching, preview deploys, rollback strategies |
-| `i18n-patterns` | Translations, pluralization, RTL support, workflow |
+| `i18n-patterns` | Complete pluralization, RTL with logical CSS, validation scripts |
 | `state-management` | Server state (React Query), client state (Zustand), URL state |
 
 ### Template vs Project-Specific
@@ -239,23 +241,25 @@ cortex-skills/
 │   │   ├── code-reviewer.md      # PR review template
 │   │   └── security-auditor.md   # Security audit template
 │   └── skills/
-│       ├── api-patterns/         # Server actions/endpoints
+│       ├── api-patterns/         # Server actions, pagination, webhooks
 │       ├── service-patterns/     # Service layer patterns
 │       ├── test-patterns/        # Testing strategies
 │       ├── ui-patterns/          # Component architecture
 │       ├── error-handling/       # Error management
 │       ├── db-anti-patterns/     # N+1 detection rules
 │       ├── rls-security/         # Row-level security
-│       ├── auth-patterns/        # Authentication/authorization
+│       ├── auth-patterns/        # MFA, password reset, lockout
+│       ├── data-management/      # Migrations, GDPR, soft delete
 │       ├── cicd-patterns/        # CI/CD pipelines
-│       ├── i18n-patterns/        # Internationalization
+│       ├── i18n-patterns/        # Internationalization, RTL
 │       ├── state-management/     # State patterns
-│       ├── flutter-patterns/     # Flutter architecture
+│       ├── flutter-patterns/     # Flutter offline, biometric
 │       ├── flutter-testing/      # Flutter testing
 │       ├── mobile-cicd/          # Mobile CI/CD
 │       ├── logging-patterns/     # Observability
 │       ├── caching-patterns/     # Cache strategies
-│       └── background-jobs/      # Queues & workers
+│       ├── background-jobs/      # Queues & workers
+│       └── production-readiness/ # Health, feature flags, runbooks
 ├── skills/                       # Project-specific skills
 │   ├── shopify/
 │   ├── supabase/

@@ -199,6 +199,715 @@ class SupabaseUserRepository implements UserRepository {
 }
 ```
 
+## Offline-First with Hive
+
+### Setup
+
+```dart
+// lib/core/storage/hive_storage.dart
+import 'package:hive_flutter/hive_flutter.dart';
+
+class HiveStorage {
+  static Future<void> init() async {
+    await Hive.initFlutter();
+
+    // Register adapters for custom types
+    Hive.registerAdapter(UserAdapter());
+    Hive.registerAdapter(SettingsAdapter());
+
+    // Open boxes
+    await Future.wait([
+      Hive.openBox<User>('users'),
+      Hive.openBox<Settings>('settings'),
+      Hive.openBox('cache'),
+    ]);
+  }
+
+  static Box<User> get usersBox => Hive.box<User>('users');
+  static Box<Settings> get settingsBox => Hive.box<Settings>('settings');
+  static Box get cacheBox => Hive.box('cache');
+
+  static Future<void> clearAll() async {
+    await Future.wait([
+      usersBox.clear(),
+      settingsBox.clear(),
+      cacheBox.clear(),
+    ]);
+  }
+}
+```
+
+### Cache-First Repository
+
+```dart
+// lib/modules/user/data/repositories/cached_user_repository.dart
+
+class CachedUserRepository implements UserRepository {
+  final SupabaseClient _client;
+  final Box<User> _cache;
+  final Duration _cacheValidity;
+
+  CachedUserRepository(
+    this._client,
+    this._cache, {
+    this._cacheValidity = const Duration(minutes: 5),
+  });
+
+  @override
+  Future<User?> getUser(String id) async {
+    // 1. Check cache first
+    final cached = _cache.get(id);
+    final cacheTime = _cache.get('${id}_timestamp') as DateTime?;
+
+    final isCacheValid = cached != null &&
+        cacheTime != null &&
+        DateTime.now().difference(cacheTime) < _cacheValidity;
+
+    if (isCacheValid) {
+      return cached;
+    }
+
+    // 2. Fetch from network
+    try {
+      final response = await _client
+          .from('users')
+          .select()
+          .eq('id', id)
+          .maybeSingle();
+
+      if (response != null) {
+        final user = User.fromJson(response);
+        // 3. Update cache
+        await _cache.put(id, user);
+        await _cache.put('${id}_timestamp', DateTime.now());
+        return user;
+      }
+      return null;
+    } catch (e) {
+      // 4. Return stale cache on network error
+      if (cached != null) {
+        return cached;
+      }
+      rethrow;
+    }
+  }
+
+  Future<void> invalidateCache(String id) async {
+    await _cache.delete(id);
+    await _cache.delete('${id}_timestamp');
+  }
+}
+```
+
+### Offline Queue for Mutations
+
+```dart
+// lib/core/sync/offline_queue.dart
+
+@freezed
+class QueuedOperation with _$QueuedOperation {
+  const factory QueuedOperation({
+    required String id,
+    required String type,  // 'create', 'update', 'delete'
+    required String table,
+    required Map<String, dynamic> data,
+    required DateTime createdAt,
+    @Default(0) int retryCount,
+  }) = _QueuedOperation;
+
+  factory QueuedOperation.fromJson(Map<String, dynamic> json) =>
+      _$QueuedOperationFromJson(json);
+}
+
+class OfflineQueue {
+  final Box _queueBox;
+  final SupabaseClient _client;
+
+  OfflineQueue(this._queueBox, this._client);
+
+  Future<void> enqueue(QueuedOperation operation) async {
+    await _queueBox.put(operation.id, operation.toJson());
+  }
+
+  Future<void> processQueue() async {
+    final operations = _queueBox.values
+        .map((json) => QueuedOperation.fromJson(Map<String, dynamic>.from(json)))
+        .toList()
+      ..sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
+    for (final op in operations) {
+      try {
+        await _processOperation(op);
+        await _queueBox.delete(op.id);
+      } catch (e) {
+        // Increment retry count
+        if (op.retryCount < 3) {
+          await _queueBox.put(
+            op.id,
+            op.copyWith(retryCount: op.retryCount + 1).toJson(),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _processOperation(QueuedOperation op) async {
+    switch (op.type) {
+      case 'create':
+        await _client.from(op.table).insert(op.data);
+      case 'update':
+        await _client.from(op.table).update(op.data).eq('id', op.data['id']);
+      case 'delete':
+        await _client.from(op.table).delete().eq('id', op.data['id']);
+    }
+  }
+
+  int get pendingCount => _queueBox.length;
+}
+```
+
+## Push Notifications (FCM)
+
+### Setup
+
+```dart
+// lib/core/notifications/push_notification_service.dart
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+
+class PushNotificationService {
+  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
+  final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
+
+  Future<void> init() async {
+    // Request permission
+    final settings = await _fcm.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
+    if (settings.authorizationStatus != AuthorizationStatus.authorized) {
+      return;
+    }
+
+    // Get FCM token
+    final token = await _fcm.getToken();
+    if (token != null) {
+      await _saveTokenToBackend(token);
+    }
+
+    // Listen for token refresh
+    _fcm.onTokenRefresh.listen(_saveTokenToBackend);
+
+    // Initialize local notifications
+    await _initLocalNotifications();
+
+    // Handle foreground messages
+    FirebaseMessaging.onMessage.listen(_handleForegroundMessage);
+
+    // Handle background messages (must be top-level function)
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+    // Handle notification taps
+    FirebaseMessaging.onMessageOpenedApp.listen(_handleNotificationTap);
+
+    // Check for initial message (app opened from terminated state)
+    final initialMessage = await _fcm.getInitialMessage();
+    if (initialMessage != null) {
+      _handleNotificationTap(initialMessage);
+    }
+  }
+
+  Future<void> _initLocalNotifications() async {
+    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const iosSettings = DarwinInitializationSettings();
+
+    await _localNotifications.initialize(
+      const InitializationSettings(
+        android: androidSettings,
+        iOS: iosSettings,
+      ),
+      onDidReceiveNotificationResponse: (response) {
+        // Handle local notification tap
+        _handleLocalNotificationTap(response.payload);
+      },
+    );
+  }
+
+  void _handleForegroundMessage(RemoteMessage message) {
+    // Show local notification when app is in foreground
+    _localNotifications.show(
+      message.hashCode,
+      message.notification?.title,
+      message.notification?.body,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'default_channel',
+          'Default',
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+        iOS: DarwinNotificationDetails(),
+      ),
+      payload: message.data['route'],
+    );
+  }
+
+  void _handleNotificationTap(RemoteMessage message) {
+    final route = message.data['route'];
+    if (route != null) {
+      // Navigate to the route
+      // navigatorKey.currentState?.pushNamed(route);
+    }
+  }
+
+  void _handleLocalNotificationTap(String? payload) {
+    if (payload != null) {
+      // Navigate to the route
+    }
+  }
+
+  Future<void> _saveTokenToBackend(String token) async {
+    // Save token to your backend
+  }
+}
+
+// Must be top-level function
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Handle background message
+}
+```
+
+### Provider
+
+```dart
+@riverpod
+PushNotificationService pushNotificationService(PushNotificationServiceRef ref) {
+  return PushNotificationService();
+}
+
+@riverpod
+Future<void> initNotifications(InitNotificationsRef ref) async {
+  final service = ref.read(pushNotificationServiceProvider);
+  await service.init();
+}
+```
+
+## Biometric Authentication
+
+```dart
+// lib/core/auth/biometric_service.dart
+import 'package:local_auth/local_auth.dart';
+
+class BiometricService {
+  final LocalAuthentication _auth = LocalAuthentication();
+
+  Future<bool> isAvailable() async {
+    final canCheck = await _auth.canCheckBiometrics;
+    final isDeviceSupported = await _auth.isDeviceSupported();
+    return canCheck && isDeviceSupported;
+  }
+
+  Future<List<BiometricType>> getAvailableBiometrics() async {
+    return _auth.getAvailableBiometrics();
+  }
+
+  Future<bool> authenticate({
+    String reason = 'Please authenticate to continue',
+  }) async {
+    try {
+      return await _auth.authenticate(
+        localizedReason: reason,
+        options: const AuthenticationOptions(
+          stickyAuth: true,
+          biometricOnly: false, // Allow PIN/password fallback
+        ),
+      );
+    } catch (e) {
+      return false;
+    }
+  }
+}
+
+// Usage with secure storage
+class SecureAuthService {
+  final BiometricService _biometric;
+  final FlutterSecureStorage _secureStorage;
+
+  SecureAuthService(this._biometric, this._secureStorage);
+
+  Future<bool> enableBiometric(String userId, String refreshToken) async {
+    if (!await _biometric.isAvailable()) {
+      return false;
+    }
+
+    // Authenticate first
+    final authenticated = await _biometric.authenticate(
+      reason: 'Authenticate to enable biometric login',
+    );
+
+    if (!authenticated) {
+      return false;
+    }
+
+    // Store refresh token securely
+    await _secureStorage.write(
+      key: 'biometric_refresh_token',
+      value: refreshToken,
+    );
+    await _secureStorage.write(
+      key: 'biometric_user_id',
+      value: userId,
+    );
+    await _secureStorage.write(
+      key: 'biometric_enabled',
+      value: 'true',
+    );
+
+    return true;
+  }
+
+  Future<String?> authenticateWithBiometric() async {
+    final enabled = await _secureStorage.read(key: 'biometric_enabled');
+    if (enabled != 'true') {
+      return null;
+    }
+
+    final authenticated = await _biometric.authenticate(
+      reason: 'Authenticate to sign in',
+    );
+
+    if (!authenticated) {
+      return null;
+    }
+
+    return _secureStorage.read(key: 'biometric_refresh_token');
+  }
+
+  Future<void> disableBiometric() async {
+    await _secureStorage.delete(key: 'biometric_refresh_token');
+    await _secureStorage.delete(key: 'biometric_user_id');
+    await _secureStorage.delete(key: 'biometric_enabled');
+  }
+}
+```
+
+## Platform Channels
+
+### Native Code Integration
+
+```dart
+// lib/core/platform/platform_channel.dart
+
+class NativePlatform {
+  static const MethodChannel _channel = MethodChannel('com.example.app/native');
+  static const EventChannel _eventChannel = EventChannel('com.example.app/events');
+
+  // Method call (one-time)
+  static Future<String> getBatteryLevel() async {
+    try {
+      final int result = await _channel.invokeMethod('getBatteryLevel');
+      return '$result%';
+    } on PlatformException catch (e) {
+      return 'Failed: ${e.message}';
+    }
+  }
+
+  // Method call with arguments
+  static Future<bool> shareText(String text) async {
+    try {
+      await _channel.invokeMethod('shareText', {'text': text});
+      return true;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  // Event stream (continuous)
+  static Stream<int> get locationUpdates {
+    return _eventChannel
+        .receiveBroadcastStream()
+        .map((event) => event as int);
+  }
+}
+```
+
+### iOS Implementation (Swift)
+
+```swift
+// ios/Runner/AppDelegate.swift
+import UIKit
+import Flutter
+
+@UIApplicationMain
+@objc class AppDelegate: FlutterAppDelegate {
+  override func application(
+    _ application: UIApplication,
+    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+  ) -> Bool {
+    let controller = window?.rootViewController as! FlutterViewController
+    let channel = FlutterMethodChannel(
+      name: "com.example.app/native",
+      binaryMessenger: controller.binaryMessenger
+    )
+
+    channel.setMethodCallHandler { (call, result) in
+      switch call.method {
+      case "getBatteryLevel":
+        result(self.getBatteryLevel())
+      case "shareText":
+        if let args = call.arguments as? [String: Any],
+           let text = args["text"] as? String {
+          self.shareText(text)
+          result(nil)
+        } else {
+          result(FlutterError(code: "INVALID_ARGS", message: nil, details: nil))
+        }
+      default:
+        result(FlutterMethodNotImplemented)
+      }
+    }
+
+    GeneratedPluginRegistrant.register(with: self)
+    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  private func getBatteryLevel() -> Int {
+    UIDevice.current.isBatteryMonitoringEnabled = true
+    return Int(UIDevice.current.batteryLevel * 100)
+  }
+
+  private func shareText(_ text: String) {
+    let activityVC = UIActivityViewController(
+      activityItems: [text],
+      applicationActivities: nil
+    )
+    window?.rootViewController?.present(activityVC, animated: true)
+  }
+}
+```
+
+### Android Implementation (Kotlin)
+
+```kotlin
+// android/app/src/main/kotlin/.../MainActivity.kt
+package com.example.app
+
+import android.content.Intent
+import android.os.BatteryManager
+import android.os.Build
+import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
+
+class MainActivity: FlutterActivity() {
+    private val CHANNEL = "com.example.app/native"
+
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "getBatteryLevel" -> {
+                        val batteryLevel = getBatteryLevel()
+                        if (batteryLevel != -1) {
+                            result.success(batteryLevel)
+                        } else {
+                            result.error("UNAVAILABLE", "Battery level not available", null)
+                        }
+                    }
+                    "shareText" -> {
+                        val text = call.argument<String>("text")
+                        if (text != null) {
+                            shareText(text)
+                            result.success(null)
+                        } else {
+                            result.error("INVALID_ARGS", "Text required", null)
+                        }
+                    }
+                    else -> result.notImplemented()
+                }
+            }
+    }
+
+    private fun getBatteryLevel(): Int {
+        val batteryManager = getSystemService(BATTERY_SERVICE) as BatteryManager
+        return batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+    }
+
+    private fun shareText(text: String) {
+        val intent = Intent().apply {
+            action = Intent.ACTION_SEND
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, text)
+        }
+        startActivity(Intent.createChooser(intent, "Share via"))
+    }
+}
+```
+
+## App Flavors (Multiple Environments)
+
+### Configuration
+
+```dart
+// lib/core/config/environment.dart
+
+enum Environment { dev, staging, prod }
+
+class AppConfig {
+  final Environment environment;
+  final String apiBaseUrl;
+  final String supabaseUrl;
+  final String supabaseAnonKey;
+  final bool enableAnalytics;
+  final bool enableCrashlytics;
+
+  const AppConfig({
+    required this.environment,
+    required this.apiBaseUrl,
+    required this.supabaseUrl,
+    required this.supabaseAnonKey,
+    this.enableAnalytics = true,
+    this.enableCrashlytics = true,
+  });
+
+  static late AppConfig current;
+
+  static const dev = AppConfig(
+    environment: Environment.dev,
+    apiBaseUrl: 'https://api-dev.example.com',
+    supabaseUrl: 'https://xxx.supabase.co',
+    supabaseAnonKey: 'dev-anon-key',
+    enableAnalytics: false,
+    enableCrashlytics: false,
+  );
+
+  static const staging = AppConfig(
+    environment: Environment.staging,
+    apiBaseUrl: 'https://api-staging.example.com',
+    supabaseUrl: 'https://yyy.supabase.co',
+    supabaseAnonKey: 'staging-anon-key',
+    enableAnalytics: true,
+    enableCrashlytics: true,
+  );
+
+  static const prod = AppConfig(
+    environment: Environment.prod,
+    apiBaseUrl: 'https://api.example.com',
+    supabaseUrl: 'https://zzz.supabase.co',
+    supabaseAnonKey: 'prod-anon-key',
+    enableAnalytics: true,
+    enableCrashlytics: true,
+  );
+
+  bool get isDev => environment == Environment.dev;
+  bool get isStaging => environment == Environment.staging;
+  bool get isProd => environment == Environment.prod;
+}
+```
+
+### Entry Points
+
+```dart
+// lib/main_dev.dart
+import 'package:my_app/core/config/environment.dart';
+import 'package:my_app/main_common.dart';
+
+void main() {
+  AppConfig.current = AppConfig.dev;
+  mainCommon();
+}
+
+// lib/main_staging.dart
+import 'package:my_app/core/config/environment.dart';
+import 'package:my_app/main_common.dart';
+
+void main() {
+  AppConfig.current = AppConfig.staging;
+  mainCommon();
+}
+
+// lib/main_prod.dart (or just lib/main.dart)
+import 'package:my_app/core/config/environment.dart';
+import 'package:my_app/main_common.dart';
+
+void main() {
+  AppConfig.current = AppConfig.prod;
+  mainCommon();
+}
+
+// lib/main_common.dart
+void mainCommon() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize services based on config
+  if (AppConfig.current.enableCrashlytics) {
+    await initCrashlytics();
+  }
+
+  runApp(const MyApp());
+}
+```
+
+### Run Commands
+
+```bash
+# Development
+flutter run --flavor dev -t lib/main_dev.dart
+
+# Staging
+flutter run --flavor staging -t lib/main_staging.dart
+
+# Production
+flutter run --flavor prod -t lib/main_prod.dart
+
+# Build
+flutter build apk --flavor prod -t lib/main_prod.dart
+flutter build ios --flavor prod -t lib/main_prod.dart
+```
+
+### Android Flavor Config
+
+```groovy
+// android/app/build.gradle
+android {
+    flavorDimensions "environment"
+    productFlavors {
+        dev {
+            dimension "environment"
+            applicationIdSuffix ".dev"
+            versionNameSuffix "-dev"
+        }
+        staging {
+            dimension "environment"
+            applicationIdSuffix ".staging"
+            versionNameSuffix "-staging"
+        }
+        prod {
+            dimension "environment"
+        }
+    }
+}
+```
+
+### iOS Flavor Config
+
+```ruby
+# ios/Podfile
+project 'Runner', {
+  'Debug-dev' => :debug,
+  'Debug-staging' => :debug,
+  'Debug-prod' => :debug,
+  'Release-dev' => :release,
+  'Release-staging' => :release,
+  'Release-prod' => :release,
+}
+```
+
 ## Navigation (go_router)
 
 ```dart
@@ -258,12 +967,6 @@ final routerProvider = Provider<GoRouter>((ref) {
     errorBuilder: (context, state) => ErrorScreen(error: state.error),
   );
 });
-
-// Navigation helper
-extension GoRouterX on BuildContext {
-  void goToUser(String id) => GoRouter.of(this).go('/users/$id');
-  void goToProfile() => GoRouter.of(this).go('/profile');
-}
 ```
 
 ## Error Handling
@@ -290,87 +993,11 @@ class AuthException extends AppException {
   AuthException(this.message);
 }
 
-class ValidationException extends AppException {
-  @override
-  final String message;
-  final Map<String, String>? fieldErrors;
-
-  ValidationException(this.message, {this.fieldErrors});
-}
-
 // Result type
 @freezed
 sealed class Result<T> with _$Result<T> {
   const factory Result.success(T data) = Success<T>;
   const factory Result.failure(AppException error) = Failure<T>;
-}
-
-// Usage in repository
-Future<Result<User>> getUser(String id) async {
-  try {
-    final response = await _client.from('users').select().eq('id', id).single();
-    return Result.success(User.fromJson(response));
-  } on PostgrestException catch (e) {
-    return Result.failure(NetworkException(e.message, statusCode: e.code));
-  } catch (e) {
-    return Result.failure(NetworkException(e.toString()));
-  }
-}
-```
-
-## Form Handling
-
-```dart
-// Using flutter_form_builder + form_builder_validators
-
-class LoginForm extends ConsumerWidget {
-  final _formKey = GlobalKey<FormBuilderState>();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-
-    return FormBuilder(
-      key: _formKey,
-      child: Column(
-        children: [
-          FormBuilderTextField(
-            name: 'email',
-            decoration: const InputDecoration(labelText: 'Email'),
-            validator: FormBuilderValidators.compose([
-              FormBuilderValidators.required(),
-              FormBuilderValidators.email(),
-            ]),
-          ),
-          FormBuilderTextField(
-            name: 'password',
-            decoration: const InputDecoration(labelText: 'Password'),
-            obscureText: true,
-            validator: FormBuilderValidators.compose([
-              FormBuilderValidators.required(),
-              FormBuilderValidators.minLength(8),
-            ]),
-          ),
-          ElevatedButton(
-            onPressed: authState.isLoading ? null : _submit,
-            child: authState.isLoading
-                ? const CircularProgressIndicator()
-                : const Text('Sign In'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _submit() {
-    if (_formKey.currentState?.saveAndValidate() ?? false) {
-      final values = _formKey.currentState!.value;
-      ref.read(authProvider.notifier).signIn(
-        values['email'] as String,
-        values['password'] as String,
-      );
-    }
-  }
 }
 ```
 
@@ -386,9 +1013,6 @@ CachedNetworkImage(
   errorWidget: (context, url, error) => const Icon(Icons.error),
   memCacheWidth: 200, // Resize in memory
 )
-
-// Preload images
-precacheImage(CachedNetworkImageProvider(imageUrl), context);
 ```
 
 ### List Optimization
@@ -403,50 +1027,11 @@ ListView.builder(
 // Use const constructors
 class ItemTile extends StatelessWidget {
   const ItemTile({super.key, required this.item});
-
-  final Item item;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(item.name),
-    );
-  }
+  // ...
 }
 
 // Avoid rebuilds with select
 final userName = ref.watch(userProvider.select((u) => u.name));
-```
-
-### Async Initialization
-
-```dart
-// Preload data during splash
-class SplashScreen extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return ref.watch(initializationProvider).when(
-      data: (_) {
-        // Navigate to home
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          context.go('/');
-        });
-        return const SizedBox.shrink();
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => ErrorScreen(error: e.toString()),
-    );
-  }
-}
-
-@riverpod
-Future<void> initialization(InitializationRef ref) async {
-  // Preload essential data
-  await Future.wait([
-    ref.read(userProvider.future),
-    ref.read(settingsProvider.future),
-  ]);
-}
 ```
 
 ## Code Generation
@@ -459,12 +1044,25 @@ dart run build_runner build --delete-conflicting-outputs
 dart run build_runner watch --delete-conflicting-outputs
 ```
 
+## Troubleshooting
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| Provider not found | Missing ProviderScope | Wrap app with `ProviderScope` |
+| State not updating | Provider not watched | Use `ref.watch()` not `ref.read()` |
+| Infinite rebuild loop | Provider watching itself | Check provider dependencies |
+| Freezed not generating | Missing part directives | Add `part 'file.freezed.dart'` |
+| Push notification not received | Missing background handler | Add top-level `@pragma` function |
+| Biometric fails silently | Permission not requested | Check `AndroidManifest.xml` and `Info.plist` |
+| Flavor build fails | Missing configuration | Check `build.gradle` and Xcode schemes |
+| Platform channel error | Method not implemented | Check native code implementation |
+
 ## Checklist
 
 ### Architecture
 - [ ] 3-layer architecture (data, domain, presentation)
 - [ ] Feature modules organized consistently
-- [ ] Clear dependency direction (presentation -> domain <- data)
+- [ ] Clear dependency direction
 - [ ] Shared code in core/ or shared/
 
 ### State Management
@@ -473,20 +1071,31 @@ dart run build_runner watch --delete-conflicting-outputs
 - [ ] No business logic in widgets
 - [ ] Error states handled
 
-### Models
-- [ ] Freezed for immutable models
-- [ ] JSON serialization configured
-- [ ] Sealed classes for state variants
-- [ ] Null safety enforced
+### Offline Support
+- [ ] Hive initialized before runApp
+- [ ] Cache-first strategy for reads
+- [ ] Offline queue for mutations
+- [ ] Sync on connectivity restore
 
-### Navigation
-- [ ] Route guards for protected screens
-- [ ] Deep linking configured
-- [ ] Error routes defined
-- [ ] Type-safe route parameters
+### Push Notifications
+- [ ] Permission requested appropriately
+- [ ] Token saved to backend
+- [ ] Foreground/background handlers
+- [ ] Deep linking from notifications
 
-### Performance
-- [ ] ListView.builder for lists
-- [ ] const constructors used
-- [ ] Images cached and sized
-- [ ] Selective rebuilds with select()
+### Security
+- [ ] Biometric available check
+- [ ] Secure storage for tokens
+- [ ] Fallback to PIN/password
+
+### Environments
+- [ ] Separate configs per environment
+- [ ] Different app IDs for dev/staging
+- [ ] Feature flags per environment
+
+## Related Templates
+
+- See `flutter-testing` for testing patterns
+- See `mobile-cicd` for CI/CD configuration
+- See `auth-patterns` for authentication
+- See `error-handling` for error boundaries
