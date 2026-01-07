@@ -178,7 +178,7 @@ The `templates/` folder contains **framework-agnostic** versions of skills and a
 | `code-reviewer` | Sonnet | PR review with architecture, security, performance, and quality checks |
 | `security-auditor` | Sonnet | OWASP top 10, dependency scan, secret detection, RLS audit |
 
-#### Skills (11 templates)
+#### Skills (14 templates)
 
 **Core Patterns**
 | Template | Description |
@@ -195,6 +195,13 @@ The `templates/` folder contains **framework-agnostic** versions of skills and a
 | `db-anti-patterns` | N+1 detection rules, sequential queries, unbounded fetches |
 | `rls-security` | Row-level security patterns for multi-tenant apps |
 | `auth-patterns` | Session vs JWT, RBAC, OAuth, password hashing |
+
+**Mobile/Flutter**
+| Template | Description |
+|----------|-------------|
+| `flutter-patterns` | Architecture, Riverpod state management, navigation, error handling |
+| `flutter-testing` | Unit, widget, golden, integration tests with mocking |
+| `mobile-cicd` | Xcode Cloud, Fastlane, GitHub Actions, code signing, deployment |
 
 **Infrastructure & State**
 | Template | Description |
@@ -235,7 +242,10 @@ cortex-skills/
 │       ├── auth-patterns/        # Authentication/authorization
 │       ├── cicd-patterns/        # CI/CD pipelines
 │       ├── i18n-patterns/        # Internationalization
-│       └── state-management/     # State patterns
+│       ├── state-management/     # State patterns
+│       ├── flutter-patterns/     # Flutter architecture
+│       ├── flutter-testing/      # Flutter testing
+│       └── mobile-cicd/          # Mobile CI/CD
 ├── skills/                       # Project-specific skills
 │   ├── shopify/
 │   ├── supabase/
