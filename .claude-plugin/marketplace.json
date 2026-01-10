@@ -94,6 +94,22 @@
         "./wip-lifecycle-manager",
         "./bulk-support-message"
       ]
+    },
+    {
+      "name": "content-creation-skills",
+      "description": "Content creation automation: 2026 platform algorithms, A/B testing, video SEO, automation systems",
+      "version": "1.0.0",
+      "author": {
+        "name": "Antoine Schaller"
+      },
+      "source": "./skills/content-creation",
+      "category": "content",
+      "skills": [
+        "./2026-content-strategy",
+        "./ab-testing-framework",
+        "./video-seo-2026",
+        "./content-automation-system"
+      ]
     }
   ]
 }

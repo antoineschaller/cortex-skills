@@ -27,6 +27,9 @@ Install only the collections you need:
 # Lead generation
 /plugin install lead-gen-skills@cortex-skills
 
+# Content creation automation
+/plugin install content-creation-skills@cortex-skills
+
 # Ballee (dance production management)
 /plugin install ballee-skills@cortex-skills
 ```
@@ -65,6 +68,16 @@ Lead generation: scoring, SLA tracking, funnel optimization.
 |-------|-------------|
 | lead-scoring | Progressive lead scoring system |
 | sla-tracking | Lead response SLA monitoring |
+
+### content-creation-skills
+Content creation automation: 2026 platform algorithms, A/B testing, video SEO, automation systems.
+
+| Skill | Description |
+|-------|-------------|
+| 2026-content-strategy | YouTube, TikTok, Instagram algorithm insights for 2026 (CTR targets, hook strategies, engagement metrics) |
+| ab-testing-framework | Systematic A/B testing for thumbnails, titles, hooks with statistical significance analysis |
+| video-seo-2026 | Multi-platform SEO optimization (keyword placement, hashtag strategies, discoverability) |
+| content-automation-system | End-to-end automation pipeline (script → video → distribution → analytics → optimization) |
 
 ### ballee-skills
 Ballee dance production management: database, Flutter mobile, web patterns, integrations.
@@ -151,6 +164,10 @@ Once installed, skills automatically activate when Claude detects relevant conte
 - **"Create a migration to add a users table"** → supabase-migrations skill
 - **"Set up GTM conversion tracking"** → gtm-management skill
 - **"How should I score this lead?"** → lead-scoring skill
+- **"Optimize my YouTube video for 2026 algorithm"** → 2026-content-strategy skill
+- **"Help me A/B test thumbnails"** → ab-testing-framework skill
+- **"Optimize SEO for TikTok and Instagram"** → video-seo-2026 skill
+- **"Build automated content pipeline"** → content-automation-system skill
 - **"Create a Supabase migration with RLS"** → ballee database-migration-manager skill
 - **"Build a Flutter module with Riverpod"** → ballee flutter-development skill
 - **"Run quality review on my changes"** → ballee quality-reviewer agent
@@ -265,6 +282,7 @@ cortex-skills/
 │   ├── supabase/
 │   ├── analytics/
 │   ├── lead-gen/
+│   ├── content-creation/
 │   └── ballee/
 ├── agents/                       # Project-specific agents
 │   └── ballee/
