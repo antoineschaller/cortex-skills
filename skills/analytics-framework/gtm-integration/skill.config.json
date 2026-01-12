@@ -1,0 +1,69 @@
+{
+  "skill": "gtm-integration",
+  "version": "1.0.0",
+  "dependencies": {
+    "packages": [
+      {
+        "name": "@akson/cortex-analytics",
+        "version": "latest",
+        "description": "Unified analytics CLI for multi-platform management"
+      },
+      {
+        "name": "@akson/cortex-gtm",
+        "version": "latest",
+        "description": "GTM management package with terraform-style workflows"
+      },
+      {
+        "name": "@akson/cortex-utilities",
+        "version": "latest",
+        "description": "Standardized event constants and utilities"
+      }
+    ],
+    "env_vars": {
+      "GTM_CONTAINER_ID": {
+        "required": true,
+        "description": "Google Tag Manager container ID",
+        "example": "GTM-XXXXXXX",
+        "validation": "^GTM-[A-Z0-9]+$"
+      },
+      "GA4_MEASUREMENT_ID": {
+        "required": false,
+        "description": "Google Analytics 4 measurement ID",
+        "example": "G-XXXXXXXXXX",
+        "validation": "^G-[A-Z0-9]+$"
+      },
+      "GOOGLE_SERVICE_ACCOUNT_KEY_FILE": {
+        "required": true,
+        "description": "Path to Google service account JSON key file",
+        "example": "config/gtm-api-automation.json"
+      }
+    },
+    "apis": [
+      {
+        "name": "Google Tag Manager API",
+        "auth": "Service Account",
+        "docs": "https://developers.google.com/tag-platform/tag-manager/api/v2"
+      }
+    ],
+    "files": [
+      {
+        "path": "config/gtm-api-automation.json",
+        "description": "Google service account credentials (never commit!)"
+      },
+      {
+        "path": "gtm.config.yaml",
+        "description": "GTM configuration file with tags, triggers, variables",
+        "optional": true
+      }
+    ],
+    "scripts": [
+      "validation/validate-dependencies.sh"
+    ]
+  },
+  "tags": ["analytics", "gtm", "conversion-tracking", "event-tracking", "framework"],
+  "reusability": {
+    "level": "framework",
+    "score": 95,
+    "notes": "Generic GTM patterns applicable to any project. Use as base for implementations."
+  }
+}

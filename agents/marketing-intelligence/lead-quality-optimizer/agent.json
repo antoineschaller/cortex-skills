@@ -1,0 +1,118 @@
+{
+  "name": "lead-quality-optimizer",
+  "version": "1.0.0",
+  "description": "Weekly lead quality analysis and funnel optimization",
+  "author": "MyArmy",
+  "triggers": [
+    {
+      "type": "schedule",
+      "cron": "0 9 * * 1",
+      "timezone": "Europe/Zurich",
+      "description": "Weekly funnel analysis - Monday 9am CET"
+    },
+    {
+      "type": "manual",
+      "description": "On-demand funnel optimization analysis"
+    }
+  ],
+  "tools": [
+    {
+      "skill": "lead-funnel-analysis",
+      "purpose": "Analyze lead conversion rates and quality"
+    },
+    {
+      "skill": "google-ads-performance",
+      "purpose": "Compare Google Ads lead quality"
+    },
+    {
+      "skill": "meta-ads-performance",
+      "purpose": "Compare Meta Ads lead quality"
+    },
+    {
+      "skill": "marketing-health-check",
+      "purpose": "Verify tracking system health"
+    }
+  ],
+  "qualityMetrics": {
+    "conversionRate": {
+      "target": 0.20,
+      "warning": 0.15,
+      "critical": 0.10,
+      "description": "Percentage of leads that convert to customers"
+    },
+    "leadScore": {
+      "target": 70,
+      "warning": 50,
+      "critical": 30,
+      "description": "Average lead score (1-100 scale)"
+    },
+    "funnelDropoff": {
+      "warning": 0.40,
+      "critical": 0.60,
+      "description": "Percentage of leads dropping at each stage"
+    },
+    "timeToConversion": {
+      "target": 7,
+      "warning": 14,
+      "critical": 21,
+      "description": "Days from lead capture to conversion"
+    },
+    "formCompletionRate": {
+      "target": 0.60,
+      "warning": 0.45,
+      "critical": 0.30,
+      "description": "Percentage completing contact form"
+    }
+  },
+  "funnelStages": [
+    {
+      "name": "page_view",
+      "event": "lead_page_view",
+      "score": 5,
+      "description": "Landing page visit"
+    },
+    {
+      "name": "content_view",
+      "event": "lead_content_view",
+      "score": 15,
+      "description": "Product content engagement"
+    },
+    {
+      "name": "inquiry_started",
+      "event": "lead_inquiry_started",
+      "score": 40,
+      "description": "Contact form opened"
+    },
+    {
+      "name": "contact_info",
+      "event": "lead_contact_info",
+      "score": 60,
+      "description": "Contact information provided"
+    },
+    {
+      "name": "whatsapp_contact",
+      "event": "lead_whatsapp_contact",
+      "score": 85,
+      "description": "WhatsApp conversation initiated"
+    },
+    {
+      "name": "form_submitted",
+      "event": "lead_form_submitted",
+      "score": 100,
+      "description": "Full inquiry submitted"
+    }
+  ],
+  "outputs": {
+    "weeklyReport": "../../../landing/docs/wip/optimizer-weekly-{date}.json",
+    "funnelAnalysis": "../../../landing/docs/wip/funnel-analysis-{date}.json",
+    "slackChannel": "#marketing-alerts"
+  },
+  "configuration": {
+    "targetConversionRate": 0.20,
+    "minConversionRate": 0.10,
+    "targetLeadScore": 70,
+    "analysisWindowDays": 7,
+    "minimumSampleSize": 50
+  },
+  "tags": ["agent", "optimization", "leads", "funnel"]
+}

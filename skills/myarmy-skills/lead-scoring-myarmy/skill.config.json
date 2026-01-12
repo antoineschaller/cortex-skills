@@ -1,0 +1,141 @@
+{
+  "$schema": "../../../skill-config.schema.json",
+  "skill": "lead-scoring-myarmy",
+  "version": "1.0.0",
+  "extends": "lead-generation-framework/lead-scoring-system",
+  "dependencies": {
+    "packages": [
+      {
+        "name": "@supabase/supabase-js",
+        "version": "latest",
+        "description": "Supabase client for lead storage and tracking"
+      }
+    ],
+    "env_vars": {
+      "SUPABASE_URL": {
+        "required": true,
+        "description": "Supabase project URL",
+        "example": "https://your-project.supabase.co"
+      },
+      "SUPABASE_ANON_KEY": {
+        "required": true,
+        "description": "Supabase anonymous key for client-side access"
+      },
+      "WHATSAPP_BUSINESS_NUMBER": {
+        "required": true,
+        "description": "WhatsApp Business number for lead contacts",
+        "example": "+41791234567",
+        "validation": "^\\+41\\d{9}$"
+      },
+      "SALES_REP_EMAIL": {
+        "required": false,
+        "description": "Email for urgent lead notifications",
+        "example": "sales@myarmy.ch"
+      }
+    },
+    "apis": [
+      {
+        "name": "Supabase Database",
+        "auth": "API Key",
+        "docs": "https://supabase.com/docs"
+      },
+      {
+        "name": "WhatsApp Business API",
+        "auth": "API Key",
+        "docs": "https://developers.facebook.com/docs/whatsapp"
+      }
+    ],
+    "scripts": [
+      "validation/validate-dependencies.sh"
+    ]
+  },
+  "configuration": {
+    "funnel_stages": {
+      "cold": { "min": 0, "max": 20, "label": "Awareness" },
+      "warm": { "min": 21, "max": 40, "label": "Interest" },
+      "hot": { "min": 41, "max": 60, "label": "Consideration" },
+      "very_hot": { "min": 61, "max": 80, "label": "Intent" },
+      "conversion": { "min": 81, "max": 100, "label": "Conversion" }
+    },
+    "scoring_events": {
+      "landing_page_view": 5,
+      "organic_military_keyword": 10,
+      "funktionsabzeichen_view": 15,
+      "custom_design_gallery": 20,
+      "pricing_page_view": 25,
+      "contact_form_started": 40,
+      "design_inquiry": 50,
+      "email_submitted": 60,
+      "whatsapp_click": 70,
+      "whatsapp_message_sent": 85,
+      "phone_call": 80,
+      "quote_submitted": 90,
+      "design_approved": 95,
+      "order_placed": 100
+    },
+    "military_keywords": [
+      "militär badge",
+      "funktionsabzeichen",
+      "truppenabzeichen",
+      "rekrutenschule souvenir",
+      "schweizer armee",
+      "abzeichen schweizer armee"
+    ],
+    "products": {
+      "funktionsabzeichen": {
+        "price_range": { "min": 12, "max": 25 },
+        "min_order": 20,
+        "avg_order_value": 400
+      },
+      "truppenabzeichen": {
+        "price_range": { "min": 8, "max": 15 },
+        "min_order": 50,
+        "avg_order_value": 600
+      },
+      "rekrutenschule_souvenirs": {
+        "price_range": { "min": 15, "max": 30 },
+        "min_order": 30,
+        "avg_order_value": 650
+      }
+    },
+    "target_audience": {
+      "primary": "Swiss Army unit commanders",
+      "secondary": "Individual soldiers",
+      "tertiary": "Veterans associations"
+    },
+    "market": {
+      "country": "switzerland",
+      "currency": "CHF",
+      "languages": ["de", "fr", "it"],
+      "primary_language": "de",
+      "communication_channel": "whatsapp",
+      "avg_sales_cycle_days": 28
+    },
+    "seasonal_patterns": {
+      "peak_months": [9, 10, 11],
+      "low_months": [6, 7, 8],
+      "decay_rate_peak": 0.02,
+      "decay_rate_low": 0.04
+    },
+    "sla_integration": {
+      "urgent": { "score_threshold": 80, "response_minutes": 60 },
+      "high": { "score_threshold": 60, "response_minutes": 240 },
+      "normal": { "score_threshold": 40, "response_minutes": 1440 },
+      "low": { "score_threshold": 20, "response_minutes": 2880 }
+    }
+  },
+  "tags": [
+    "lead-scoring",
+    "swiss-market",
+    "military",
+    "b2b",
+    "custom-manufacturing",
+    "whatsapp",
+    "myarmy"
+  ],
+  "reusability": {
+    "score": 30,
+    "level": "implementation",
+    "notes": "Swiss military market-specific implementation. Scoring events and thresholds are tailored to custom badge manufacturing. Patterns are reusable, but values are MyArmy-specific (WhatsApp focus, military keywords, seasonal patterns)."
+  }
+}

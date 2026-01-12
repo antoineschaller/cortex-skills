@@ -1,0 +1,53 @@
+{
+  "skill": "gsc-optimization",
+  "version": "1.0.0",
+  "dependencies": {
+    "packages": [
+      {
+        "name": "@akson/cortex-analytics",
+        "version": "latest",
+        "description": "Unified analytics CLI for multi-platform management"
+      },
+      {
+        "name": "@akson/cortex-gsc",
+        "version": "latest",
+        "description": "Google Search Console analysis package"
+      }
+    ],
+    "env_vars": {
+      "GSC_SITE_URL": {
+        "required": true,
+        "description": "Website URL registered in Google Search Console",
+        "example": "https://myarmy.ch",
+        "validation": "^https?://[a-z0-9.-]+\\.[a-z]{2,}$"
+      },
+      "GOOGLE_SERVICE_ACCOUNT_KEY_FILE": {
+        "required": true,
+        "description": "Path to Google service account JSON key file",
+        "example": "config/gsc-automation.json"
+      }
+    },
+    "apis": [
+      {
+        "name": "Google Search Console API",
+        "auth": "Service Account",
+        "docs": "https://developers.google.com/webmaster-tools/v1/api_reference_index"
+      }
+    ],
+    "files": [
+      {
+        "path": "config/gsc-automation.json",
+        "description": "Google service account credentials (never commit!)"
+      }
+    ],
+    "scripts": [
+      "validation/validate-dependencies.sh"
+    ]
+  },
+  "tags": ["seo", "gsc", "keyword-research", "search-performance", "framework"],
+  "reusability": {
+    "level": "framework",
+    "score": 95,
+    "notes": "Generic GSC patterns applicable to any website. Use as base for implementations."
+  }
+}

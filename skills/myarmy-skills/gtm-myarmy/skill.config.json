@@ -1,0 +1,148 @@
+{
+  "$schema": "../../../skill-config.schema.json",
+  "skill": "gtm-myarmy",
+  "version": "1.0.0",
+  "extends": "analytics-framework/gtm-integration",
+  "dependencies": {
+    "packages": [
+      {
+        "name": "@akson/cortex-gtm",
+        "version": "latest",
+        "description": "GTM container management via API"
+      },
+      {
+        "name": "@akson/cortex-analytics",
+        "version": "latest",
+        "description": "Unified analytics CLI"
+      },
+      {
+        "name": "@akson/cortex-utilities",
+        "version": "latest",
+        "description": "Standardized event constants"
+      }
+    ],
+    "env_vars": {
+      "GTM_CONTAINER_ID": {
+        "required": true,
+        "description": "Google Tag Manager container ID",
+        "example": "GTM-T8WRBMWV",
+        "validation": "^GTM-[A-Z0-9]+$"
+      },
+      "GA4_MEASUREMENT_ID": {
+        "required": true,
+        "description": "Google Analytics 4 measurement ID",
+        "example": "G-PTZF5JDTMH",
+        "validation": "^G-[A-Z0-9]+$"
+      },
+      "GOOGLE_ADS_CUSTOMER_ID": {
+        "required": true,
+        "description": "Google Ads customer account ID",
+        "example": "8847935674",
+        "validation": "^\\d{10}$"
+      },
+      "GOOGLE_ADS_CONVERSION_ID": {
+        "required": true,
+        "description": "Google Ads conversion tracking ID",
+        "example": "659644670",
+        "validation": "^\\d{9}$"
+      },
+      "CONVERSION_LABEL_FORM": {
+        "required": true,
+        "description": "Conversion label for form submissions",
+        "example": "JIHLCN-r-IwbEP7BxboC"
+      },
+      "CONVERSION_LABEL_WHATSAPP": {
+        "required": true,
+        "description": "Conversion label for WhatsApp contacts",
+        "example": "o9ylCNyr-IwbEP7BxboC"
+      },
+      "POSTHOG_PROJECT_KEY": {
+        "required": false,
+        "description": "PostHog project API key for product analytics",
+        "example": "phc_Y8vb3DFiRumtKXyoKQsVO77XlE26AuDWc1iXaZc8rjC"
+      }
+    },
+    "apis": [
+      {
+        "name": "Google Tag Manager API",
+        "auth": "Service Account",
+        "docs": "https://developers.google.com/tag-platform/tag-manager/api/v2"
+      },
+      {
+        "name": "Google Analytics 4",
+        "auth": "Service Account",
+        "docs": "https://developers.google.com/analytics/devguides/collection/ga4"
+      },
+      {
+        "name": "PostHog Events API",
+        "auth": "API Key",
+        "docs": "https://posthog.com/docs/api"
+      }
+    ],
+    "files": [
+      {
+        "path": "config/gtm-api-automation.json",
+        "description": "Google service account key for GTM API access"
+      }
+    ],
+    "scripts": [
+      "validation/validate-dependencies.sh"
+    ]
+  },
+  "configuration": {
+    "gtm": {
+      "container_id": "${GTM_CONTAINER_ID}",
+      "account_id": "6067855544"
+    },
+    "google_ads": {
+      "customer_id": "${GOOGLE_ADS_CUSTOMER_ID}",
+      "conversion_id": "${GOOGLE_ADS_CONVERSION_ID}",
+      "conversion_labels": {
+        "form_submission": "${CONVERSION_LABEL_FORM}",
+        "whatsapp_contact": "${CONVERSION_LABEL_WHATSAPP}"
+      }
+    },
+    "ga4": {
+      "measurement_id": "${GA4_MEASUREMENT_ID}"
+    },
+    "posthog": {
+      "project_key": "${POSTHOG_PROJECT_KEY}"
+    },
+    "market": {
+      "country": "switzerland",
+      "currency": "CHF",
+      "languages": ["de", "fr", "it", "en"],
+      "primary_language": "de"
+    },
+    "event_system": {
+      "lead_generation": {
+        "page_view": 5,
+        "content_view": 15,
+        "inquiry_started": 40,
+        "contact_info": 60,
+        "whatsapp_contact": 85,
+        "form_submitted": 100
+      },
+      "ecommerce": {
+        "view_item": "price_value",
+        "add_to_cart": "price_value",
+        "begin_checkout": "cart_value",
+        "purchase": "order_total"
+      }
+    }
+  },
+  "tags": [
+    "gtm",
+    "google-ads",
+    "analytics",
+    "conversion-tracking",
+    "swiss-market",
+    "lead-generation",
+    "myarmy"
+  ],
+  "reusability": {
+    "score": 20,
+    "level": "implementation",
+    "notes": "Project-specific implementation of analytics-framework/gtm-integration. Hardcoded to MyArmy GTM container, Google Ads account, and conversion labels. Reusable pattern, not reusable values."
+  }
+}

@@ -1,0 +1,202 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://cortex-skills/skill-config.schema.json",
+  "title": "Cortex Skills Configuration",
+  "description": "Configuration schema for cortex-skills to support multiple projects",
+  "type": "object",
+  "required": ["skill", "version", "dependencies"],
+  "properties": {
+    "skill": {
+      "type": "string",
+      "description": "Unique skill identifier (matches directory name)",
+      "pattern": "^[a-z0-9-]+$",
+      "examples": ["gtm-management", "lead-scoring", "revenue-analysis"]
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of the skill",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "examples": ["1.0.0", "2.1.3"]
+    },
+    "extends": {
+      "type": "string",
+      "description": "Optional framework skill this implementation extends",
+      "examples": ["analytics-framework/gtm-integration", "lead-generation-framework/lead-scoring-system"]
+    },
+    "dependencies": {
+      "type": "object",
+      "description": "All required dependencies for this skill",
+      "properties": {
+        "packages": {
+          "type": "array",
+          "description": "NPM packages required",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Package name",
+                "examples": ["@akson/cortex-analytics", "@supabase/supabase-js"]
+              },
+              "version": {
+                "type": "string",
+                "description": "Version or range",
+                "default": "latest",
+                "examples": ["latest", "^1.0.0", ">=2.0.0"]
+              },
+              "description": {
+                "type": "string",
+                "description": "What this package provides"
+              }
+            }
+        }
+        },
+        "env_vars": {
+          "type": "object",
+          "description": "Environment variables required",
+          "patternProperties": {
+            "^[A-Z_][A-Z0-9_]*$": {
+              "type": "object",
+              "required": ["required", "description"],
+              "properties": {
+                "required": {
+                  "type": "boolean",
+                  "description": "Whether this variable is required"
+                },
+                "description": {
+                  "type": "string",
+                  "description": "What this variable is used for"
+                },
+                "example": {
+                  "type": "string",
+                  "description": "Example value (never real credentials)"
+                },
+                "default": {
+                  "type": "string",
+                  "description": "Default value if not provided"
+                },
+                "validation": {
+                  "type": "string",
+                  "description": "Regex pattern for validation",
+                  "examples": ["^GTM-[A-Z0-9]+$", "^\\d{10}$"]
+                }
+              }
+            }
+          }
+        },
+        "apis": {
+          "type": "array",
+          "description": "External APIs required",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "API name",
+                "examples": ["Google Tag Manager API", "Google Search Console API", "Airtable API"]
+              },
+              "auth": {
+                "type": "string",
+                "description": "Authentication method",
+                "enum": ["OAuth2", "Service Account", "API Key", "Bearer Token"],
+                "examples": ["Service Account", "API Key"]
+              },
+              "docs": {
+                "type": "string",
+                "format": "uri",
+                "description": "Link to API documentation"
+              }
+            }
+          }
+        },
+        "files": {
+          "type": "array",
+          "description": "Required files (config, credentials, etc.)",
+          "items": {
+            "type": "object",
+            "required": ["path", "description"],
+            "properties": {
+              "path": {
+                "type": "string",
+                "description": "Relative path from project root",
+                "examples": ["config/gtm-api-automation.json", ".env"]
+              },
+              "description": {
+                "type": "string",
+                "description": "What this file contains"
+              },
+              "optional": {
+                "type": "boolean",
+                "description": "Whether this file is optional",
+                "default": false
+              }
+            }
+          }
+        },
+        "scripts": {
+          "type": "array",
+          "description": "Cortex-skills scripts used by this skill",
+          "items": {
+            "type": "string",
+            "description": "Path to script from cortex-skills/scripts/",
+            "examples": ["validation/validate-dependencies.sh", "quality/code-quality-check.sh"]
+          }
+        }
+      }
+    },
+    "configuration": {
+      "type": "object",
+      "description": "Project-specific configuration values",
+      "patternProperties": {
+        "^[a-z_][a-z0-9_]*$": {
+          "anyOf": [
+            {"type": "string"},
+            {"type": "number"},
+            {"type": "boolean"},
+            {"type": "object"},
+            {"type": "array"}
+          ]
+        }
+      },
+      "examples": [{
+        "gtm_container_id": "${GTM_CONTAINER_ID}",
+        "google_ads_account": "${GOOGLE_ADS_CUSTOMER_ID}",
+        "conversion_labels": {
+          "form_submission": "${CONVERSION_LABEL_FORM}",
+          "whatsapp_contact": "${CONVERSION_LABEL_WHATSAPP}"
+        }
+      }]
+    },
+    "tags": {
+      "type": "array",
+      "description": "Tags for categorization and search",
+      "items": {
+        "type": "string",
+        "examples": ["analytics", "lead-generation", "e-commerce", "swiss-market"]
+      }
+    },
+    "reusability": {
+      "type": "object",
+      "description": "Reusability metrics and status",
+      "properties": {
+        "score": {
+          "type": "integer",
+          "description": "Reusability score (0-100)",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "level": {
+          "type": "string",
+          "description": "Reusability classification",
+          "enum": ["generic", "framework", "implementation", "project-specific"]
+        },
+        "notes": {
+          "type": "string",
+          "description": "Notes about reusability or limitations"
+        }
+      }
+    }
+  }
+}

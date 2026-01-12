@@ -1,0 +1,164 @@
+{
+  "name": "marketing-strategist",
+  "version": "1.0.0",
+  "description": "Autonomous monthly budget optimization with weekly performance reviews",
+  "author": "MyArmy",
+  "triggers": [
+    {
+      "type": "schedule",
+      "cron": "0 17 * * 5",
+      "timezone": "Europe/Zurich",
+      "description": "Weekly performance review - Friday 5pm CET"
+    },
+    {
+      "type": "schedule",
+      "cron": "0 9 1 * *",
+      "timezone": "Europe/Zurich",
+      "description": "Monthly budget planning - 1st day at 9am CET"
+    },
+    {
+      "type": "manual",
+      "description": "On-demand analysis via command line"
+    }
+  ],
+  "tools": [
+    {
+      "skill": "revenue-analysis",
+      "purpose": "Load historical seasonal patterns"
+    },
+    {
+      "skill": "google-ads-performance",
+      "purpose": "Fetch last 30 days Google Ads spend and CAC data"
+    },
+    {
+      "skill": "meta-ads-performance",
+      "purpose": "Fetch last 30 days Meta Ads (Facebook/Instagram) spend and CAC data"
+    },
+    {
+      "skill": "lead-funnel-analysis",
+      "purpose": "Analyze lead quality and conversion rates"
+    },
+    {
+      "skill": "seasonal-budget-advisor",
+      "purpose": "Generate budget recommendations"
+    },
+    {
+      "skill": "budget-calculator",
+      "purpose": "Calculate expected results for scenarios"
+    }
+  ],
+  "decisionFramework": {
+    "autoExecute": {
+      "conditions": [
+        {
+          "metric": "cacDeviation",
+          "operator": "<",
+          "value": 0.10,
+          "description": "CAC within 10% of target CHF 15"
+        },
+        {
+          "metric": "roasWithinRange",
+          "operator": ">=",
+          "value": 2.0,
+          "description": "ROAS at least 2x (minimum acceptable)"
+        },
+        {
+          "metric": "budgetCompliance",
+          "operator": ">=",
+          "value": 0.90,
+          "description": "Budget utilization between 90-110%"
+        }
+      ],
+      "actions": [
+        "Generate weekly performance report",
+        "Update seasonal multipliers if needed",
+        "Create next week's recommendations"
+      ]
+    },
+    "requestApproval": {
+      "conditions": [
+        {
+          "metric": "budgetReallocation",
+          "operator": ">",
+          "value": 0.15,
+          "description": "Budget shift exceeds 15%"
+        },
+        {
+          "metric": "cacSpike",
+          "operator": ">",
+          "value": 0.20,
+          "description": "CAC increased >20% from baseline"
+        },
+        {
+          "metric": "newCampaigns",
+          "operator": "==",
+          "value": true,
+          "description": "Proposing new campaign launches"
+        }
+      ],
+      "actions": [
+        "Send Slack notification with recommendation",
+        "Wait for user approval before executing",
+        "Provide detailed cost-benefit analysis"
+      ]
+    },
+    "alertImmediately": {
+      "conditions": [
+        {
+          "metric": "cacExceeds",
+          "operator": ">",
+          "value": 20.0,
+          "description": "CAC exceeds CHF 20 (critical threshold)"
+        },
+        {
+          "metric": "roasBelow",
+          "operator": "<",
+          "value": 2.0,
+          "description": "ROAS dropped below 2x (unsustainable)"
+        },
+        {
+          "metric": "budgetOverrun",
+          "operator": ">",
+          "value": 0.50,
+          "description": "Budget overrun exceeds 50%"
+        }
+      ],
+      "actions": [
+        "Send CRITICAL Slack alert",
+        "Recommend immediate pause of underperforming campaigns",
+        "Suggest emergency budget reallocation"
+      ]
+    }
+  },
+  "outputs": {
+    "weeklyReport": "../../../landing/docs/wip/strategist-weekly-{date}.json",
+    "monthlyPlan": "../../../landing/docs/wip/strategist-monthly-{date}.json",
+    "slackChannel": "#marketing-alerts"
+  },
+  "configuration": {
+    "targetCAC": 15.0,
+    "targetROAS": 3.0,
+    "minROAS": 2.0,
+    "targetConversionRate": 0.20,
+    "budgetDeviationThreshold": 0.15,
+    "cacDeviationThreshold": 0.10,
+    "channels": {
+      "google": {
+        "weight": 0.6,
+        "minROAS": 2.0,
+        "targetCAC": 15.0
+      },
+      "meta": {
+        "weight": 0.4,
+        "minROAS": 2.5,
+        "targetCAC": 13.0
+      }
+    },
+    "optimizationStrategy": "blended",
+    "channelThresholds": {
+      "budgetShiftThreshold": 0.15,
+      "performanceDiffThreshold": 0.20
+    }
+  },
+  "tags": ["agent", "optimization", "budget", "autonomous"]
+}

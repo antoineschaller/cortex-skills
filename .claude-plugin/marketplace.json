@@ -32,7 +32,7 @@
     },
     {
       "name": "analytics-skills",
-      "description": "Analytics: GTM management, GSC analysis, tracking",
+      "description": "Analytics: GTM management, GSC analysis, tracking (DEPRECATED: See analytics-framework)",
       "version": "1.0.0",
       "author": {
         "name": "Antoine Schaller"
@@ -42,8 +42,19 @@
       "skills": ["./gtm-management", "./gsc-analysis"]
     },
     {
+      "name": "analytics-framework",
+      "description": "Generic analytics patterns: GTM integration, GSC optimization (framework for implementations)",
+      "version": "2.0.0",
+      "author": {
+        "name": "Antoine Schaller"
+      },
+      "source": "./skills/analytics-framework",
+      "category": "framework",
+      "skills": ["./gtm-integration", "./gsc-optimization"]
+    },
+    {
       "name": "lead-gen-skills",
-      "description": "Lead generation: scoring, SLA tracking, funnel optimization",
+      "description": "Lead generation: scoring, SLA tracking (DEPRECATED: See lead-generation-framework)",
       "version": "1.0.0",
       "author": {
         "name": "Antoine Schaller"
@@ -51,6 +62,39 @@
       "source": "./skills/lead-gen",
       "category": "business",
       "skills": ["./lead-scoring", "./sla-tracking"]
+    },
+    {
+      "name": "lead-generation-framework",
+      "description": "Generic lead generation patterns: lead scoring, SLA tracking (framework for implementations)",
+      "version": "2.0.0",
+      "author": {
+        "name": "Antoine Schaller"
+      },
+      "source": "./skills/lead-generation-framework",
+      "category": "framework",
+      "skills": ["./lead-scoring-system", "./sla-tracking"]
+    },
+    {
+      "name": "marketing-intelligence-framework",
+      "description": "Generic marketing analytics patterns: campaign performance, budget optimization (framework for implementations)",
+      "version": "2.0.0",
+      "author": {
+        "name": "Antoine Schaller"
+      },
+      "source": "./skills/marketing-intelligence-framework",
+      "category": "framework",
+      "skills": ["./campaign-analytics"]
+    },
+    {
+      "name": "myarmy-skills",
+      "description": "MyArmy implementations: Swiss military market analytics, lead scoring (example implementations)",
+      "version": "1.0.0",
+      "author": {
+        "name": "MyArmy"
+      },
+      "source": "./skills/myarmy-skills",
+      "category": "implementation",
+      "skills": ["./gtm-myarmy", "./lead-scoring-myarmy"]
     },
     {
       "name": "dev-tools-skills",

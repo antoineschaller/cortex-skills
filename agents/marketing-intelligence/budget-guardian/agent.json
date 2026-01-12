@@ -1,0 +1,108 @@
+{
+  "name": "budget-guardian",
+  "version": "1.0.0",
+  "description": "Daily budget monitoring with real-time threshold alerts",
+  "author": "MyArmy",
+  "triggers": [
+    {
+      "type": "schedule",
+      "cron": "0 8 * * *",
+      "timezone": "Europe/Zurich",
+      "description": "Daily budget check - 8am CET"
+    },
+    {
+      "type": "manual",
+      "description": "On-demand budget verification"
+    }
+  ],
+  "tools": [
+    {
+      "skill": "google-ads-performance",
+      "purpose": "Fetch current day and month-to-date Google Ads spend"
+    },
+    {
+      "skill": "meta-ads-performance",
+      "purpose": "Fetch current day and month-to-date Meta Ads spend"
+    },
+    {
+      "skill": "budget-calculator",
+      "purpose": "Load monthly budget allocations"
+    },
+    {
+      "skill": "marketing-health-check",
+      "purpose": "Verify system connectivity"
+    }
+  ],
+  "alertRules": {
+    "budgetThresholds": {
+      "warning": {
+        "percentage": 0.80,
+        "description": "Alert when 80% of monthly budget spent"
+      },
+      "critical": {
+        "percentage": 0.90,
+        "description": "Critical alert when 90% of monthly budget spent"
+      },
+      "exceeded": {
+        "percentage": 1.00,
+        "description": "Budget exceeded - immediate action required"
+      }
+    },
+    "cacThresholds": {
+      "warning": {
+        "value": 17.0,
+        "description": "CAC between CHF 15-17 for 3+ days"
+      },
+      "critical": {
+        "value": 20.0,
+        "description": "CAC exceeds CHF 20 - unsustainable"
+      }
+    },
+    "dailySpendThresholds": {
+      "warning": {
+        "percentage": 1.20,
+        "description": "Daily spend 20% above expected daily rate"
+      },
+      "critical": {
+        "percentage": 1.50,
+        "description": "Daily spend 50% above expected daily rate"
+      }
+    },
+    "roasThresholds": {
+      "warning": {
+        "value": 2.5,
+        "description": "ROAS between 2.0-2.5x (below target)"
+      },
+      "critical": {
+        "value": 2.0,
+        "description": "ROAS below 2.0x (unsustainable)"
+      }
+    }
+  },
+  "outputs": {
+    "dailyReport": "../../../landing/docs/wip/guardian-daily-{date}.json",
+    "alertLog": "../../../landing/docs/wip/guardian-alerts.log",
+    "slackChannel": "#marketing-alerts"
+  },
+  "configuration": {
+    "targetCAC": 15.0,
+    "targetROAS": 3.0,
+    "minROAS": 2.0,
+    "checkIntervalHours": 4,
+    "alertCooldownMinutes": 60,
+    "channels": {
+      "google": {
+        "weight": 0.6,
+        "minROAS": 2.0,
+        "targetCAC": 15.0
+      },
+      "meta": {
+        "weight": 0.4,
+        "minROAS": 2.5,
+        "targetCAC": 13.0
+      }
+    },
+    "optimizationStrategy": "blended"
+  },
+  "tags": ["agent", "monitoring", "alerts", "budget"]
+}
