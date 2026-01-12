@@ -27,6 +27,9 @@ Install only the collections you need:
 # Lead generation
 /plugin install lead-gen-skills@cortex-skills
 
+# Developer tools (skill/agent management)
+/plugin install dev-tools-skills@cortex-skills
+
 # Content creation automation
 /plugin install content-creation-skills@cortex-skills
 
@@ -68,6 +71,13 @@ Lead generation: scoring, SLA tracking, funnel optimization.
 |-------|-------------|
 | lead-scoring | Progressive lead scoring system |
 | sla-tracking | Lead response SLA monitoring |
+
+### dev-tools-skills
+Developer tools: skill management, agent management, development workflows.
+
+| Skill | Description |
+|-------|-------------|
+| skill-manager | Create, edit, validate, and manage Claude Code skills and collections |
 
 ### content-creation-skills
 Content creation automation: 2026 platform algorithms, A/B testing, video SEO, automation systems.

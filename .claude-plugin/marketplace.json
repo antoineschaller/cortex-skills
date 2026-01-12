@@ -53,6 +53,17 @@
       "skills": ["./lead-scoring", "./sla-tracking"]
     },
     {
+      "name": "dev-tools-skills",
+      "description": "Developer tools: skill management, agent management, development workflows",
+      "version": "1.0.0",
+      "author": {
+        "name": "Antoine Schaller"
+      },
+      "source": "./skills/skill-manager",
+      "category": "development",
+      "skills": ["./skill-manager"]
+    },
+    {
       "name": "ballee-skills",
       "description": "Ballee dance production management: database, Flutter mobile, web patterns, integrations",
       "version": "1.0.0",
