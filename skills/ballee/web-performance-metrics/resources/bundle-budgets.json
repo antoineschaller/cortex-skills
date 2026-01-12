@@ -1,0 +1,25 @@
+{
+  "maxTotalSize": "500kb",
+  "maxInitialSize": "200kb",
+  "maxChunkSize": "100kb",
+  "routes": {
+    "/": "150kb",
+    "/admin": "300kb",
+    "/events": "250kb",
+    "/events/[id]": "200kb",
+    "/account": "180kb"
+  },
+  "strictMode": false,
+  "thresholds": {
+    "warning": 0.9,
+    "error": 1.0
+  },
+  "comments": {
+    "maxTotalSize": "Total JavaScript bundle size across all chunks",
+    "maxInitialSize": "Initial bundle loaded on first page load",
+    "maxChunkSize": "Maximum size for any single chunk (route or shared)",
+    "routes": "Per-route bundle size budgets for dynamic routes",
+    "strictMode": "If true, fail on any budget violation. If false, only fail on error threshold",
+    "thresholds": "warning = 90% of budget, error = 100% of budget"
+  }
+}

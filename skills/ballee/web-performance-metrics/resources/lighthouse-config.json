@@ -1,0 +1,132 @@
+{
+  "ci": {
+    "collect": {
+      "numberOfRuns": 3,
+      "url": ["https://staging.ballee.io"],
+      "settings": {
+        "preset": "desktop",
+        "onlyCategories": ["performance"],
+        "throttling": {
+          "rttMs": 40,
+          "throughputKbps": 10240,
+          "cpuSlowdownMultiplier": 1
+        },
+        "screenEmulation": {
+          "mobile": false,
+          "width": 1350,
+          "height": 940,
+          "deviceScaleFactor": 1,
+          "disabled": false
+        }
+      }
+    },
+    "assert": {
+      "preset": "lighthouse:recommended",
+      "assertions": {
+        "categories:performance": [
+          "error",
+          {
+            "minScore": 0.9
+          }
+        ],
+        "first-contentful-paint": [
+          "warn",
+          {
+            "maxNumericValue": 2000
+          }
+        ],
+        "largest-contentful-paint": [
+          "error",
+          {
+            "maxNumericValue": 2500
+          }
+        ],
+        "cumulative-layout-shift": [
+          "error",
+          {
+            "maxNumericValue": 0.1
+          }
+        ],
+        "total-blocking-time": [
+          "warn",
+          {
+            "maxNumericValue": 300
+          }
+        ],
+        "speed-index": [
+          "warn",
+          {
+            "maxNumericValue": 3400
+          }
+        ],
+        "interactive": [
+          "warn",
+          {
+            "maxNumericValue": 3800
+          }
+        ]
+      }
+    },
+    "upload": {
+      "target": "temporary-public-storage"
+    }
+  },
+  "presets": {
+    "mobile": {
+      "collect": {
+        "settings": {
+          "preset": "mobile",
+          "throttling": {
+            "rttMs": 150,
+            "throughputKbps": 1638,
+            "cpuSlowdownMultiplier": 4
+          },
+          "screenEmulation": {
+            "mobile": true,
+            "width": 412,
+            "height": 823,
+            "deviceScaleFactor": 2.625,
+            "disabled": false
+          }
+        }
+      }
+    },
+    "desktop": {
+      "collect": {
+        "settings": {
+          "preset": "desktop",
+          "throttling": {
+            "rttMs": 40,
+            "throughputKbps": 10240,
+            "cpuSlowdownMultiplier": 1
+          },
+          "screenEmulation": {
+            "mobile": false,
+            "width": 1350,
+            "height": 940,
+            "deviceScaleFactor": 1,
+            "disabled": false
+          }
+        }
+      }
+    }
+  },
+  "comments": {
+    "numberOfRuns": "Run Lighthouse 3 times and average results for consistency",
+    "preset": "desktop for faster CI runs, mobile for production audits",
+    "onlyCategories": "Only performance category to speed up tests",
+    "assertions": {
+      "error": "Fails CI if threshold exceeded",
+      "warn": "Reports warning but doesn't fail CI"
+    },
+    "thresholds": {
+      "performance": "Minimum score of 90 (0.9)",
+      "FCP": "First Contentful Paint < 2s",
+      "LCP": "Largest Contentful Paint < 2.5s",
+      "CLS": "Cumulative Layout Shift < 0.1",
+      "TBT": "Total Blocking Time < 300ms",
+      "SI": "Speed Index < 3.4s",
+      "TTI": "Time to Interactive < 3.8s"
+    }
+  }
+}

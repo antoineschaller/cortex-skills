@@ -1,0 +1,24 @@
+{
+  "name": "codemagic-flutter-cicd",
+  "version": "1.0.0",
+  "description": "Complete guide for Codemagic CI/CD with Flutter apps: iOS code signing, App Store Connect integration, TestFlight deployment, and troubleshooting",
+  "tags": [
+    "flutter",
+    "codemagic",
+    "cicd",
+    "ios",
+    "testflight",
+    "code-signing",
+    "deployment"
+  ],
+  "author": "Ballee Team",
+  "userInvocable": true,
+  "dependencies": [],
+  "files": [
+    "README.md",
+    "workflows.md",
+    "code-signing.md",
+    "testflight.md",
+    "troubleshooting.md"
+  ]
+}
