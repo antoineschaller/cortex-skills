@@ -21,9 +21,13 @@ from pathlib import Path
 from typing import Dict, List, Optional
 import sys
 
-# Import validation from validate-compliance.py
-sys.path.insert(0, str(Path(__file__).parent))
-from validate_compliance import ComplianceValidator
+# Import validation from validate-compliance.py (using importlib for hyphenated filename)
+import importlib.util
+script_dir = Path(__file__).parent
+validate_spec = importlib.util.spec_from_file_location("validate_compliance", script_dir / "validate-compliance.py")
+validate_module = importlib.util.module_from_spec(validate_spec)
+validate_spec.loader.exec_module(validate_module)
+ComplianceValidator = validate_module.ComplianceValidator
 
 
 class ReportGenerator:

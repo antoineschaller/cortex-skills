@@ -186,6 +186,17 @@
         "./video-seo-2026",
         "./content-automation-system"
       ]
+    },
+    {
+      "name": "engineering-standards",
+      "description": "Comprehensive engineering standards framework: hooks, testing, documentation, quality gates, security, monorepo patterns, validation scripts, and project bootstrapping",
+      "version": "1.0.0",
+      "author": {
+        "name": "Antoine Schaller"
+      },
+      "source": "./templates/skills/engineering-standards",
+      "category": "framework",
+      "skills": ["./engineering-standards"]
     }
   ]
 }
