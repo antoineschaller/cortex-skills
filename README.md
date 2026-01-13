@@ -37,6 +37,36 @@ Install only the collections you need:
 /plugin install ballee-skills@cortex-skills
 ```
 
+## 🔗 Related Resources
+
+### Cortex Ecosystem
+
+Cortex Skills teaches AI **how** to use patterns. Cortex Packages provides the **code** that implements them.
+
+- **📦 NPM Packages**: [Cortex Packages on GitHub](https://github.com/antoineschaller/cortex-packages) (private repo)
+  - 26 published packages: [@akson/cortex-* on npm](https://www.npmjs.com/search?q=%40akson%2Fcortex)
+  - Auto-publishing monorepo with Lerna
+  - Supabase, Analytics, GTM, Landing Pages, and more
+
+- **🤝 Compatibility**: [COMPATIBILITY.md](./COMPATIBILITY.md)
+  - Shows which skills work with which package versions
+  - Updated automatically via GitHub Actions
+  - Tracks 14+ skill→package dependencies
+
+### Using Skills + Packages Together
+
+1. **Install Skills** (teaches Claude patterns):
+   ```bash
+   /plugin install ballee-skills@cortex-skills
+   ```
+
+2. **Install Packages** (provides implementation):
+   ```bash
+   npm install @akson/cortex-supabase @akson/cortex-gtm
+   ```
+
+3. **Develop**: Claude uses skill patterns + package APIs for consistent, high-quality code
+
 ## Available Collections
 
 ### shopify-skills
