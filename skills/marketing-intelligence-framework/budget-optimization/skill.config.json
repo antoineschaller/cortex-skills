@@ -1,0 +1,16 @@
+{
+  "skill": "budget-optimization",
+  "version": "1.0.0",
+  "dependencies": {
+    "packages": [],
+    "env_vars": {},
+    "apis": [],
+    "scripts": []
+  },
+  "tags": ["budget", "optimization", "allocation", "roas", "cac", "seasonal", "framework"],
+  "reusability": {
+    "level": "framework",
+    "score": 85,
+    "notes": "Generic budget allocation and optimization patterns. Applicable to any multi-channel marketing setup."
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "skill": "advertising-performance",
+  "version": "1.0.0",
+  "dependencies": {
+    "packages": [
+      {
+        "name": "@akson/cortex-analytics",
+        "version": "latest",
+        "description": "Unified analytics CLI for multi-platform management"
+      },
+      {
+        "name": "@akson/cortex-google-ads",
+        "version": "latest",
+        "description": "Google Ads API client"
+      },
+      {
+        "name": "facebook-nodejs-business-sdk",
+        "version": "latest",
+        "description": "Meta Ads (Facebook) API SDK"
+      }
+    ],
+    "env_vars": {
+      "GOOGLE_ADS_CUSTOMER_ID": {
+        "required": true,
+        "description": "Google Ads account ID (10-digit format)",
+        "example": "8847935674",
+        "validation": "^\\d{10}$"
+      },
+      "FACEBOOK_AD_ACCOUNT_ID": {
+        "required": true,
+        "description": "Meta Ads account ID with 'act_' prefix",
+        "example": "act_23486502",
+        "validation": "^act_\\d+$"
+      },
+      "FACEBOOK_ACCESS_TOKEN": {
+        "required": true,
+        "description": "Meta Ads API access token",
+        "example": "EAAxxxxx..."
+      }
+    },
+    "apis": [
+      {
+        "name": "Google Ads API",
+        "auth": "OAuth 2.0 / Service Account",
+        "docs": "https://developers.google.com/google-ads/api/docs"
+      },
+      {
+        "name": "Meta Marketing API",
+        "auth": "Access Token",
+        "docs": "https://developers.facebook.com/docs/marketing-apis"
+      }
+    ],
+    "scripts": []
+  },
+  "tags": ["advertising", "google-ads", "meta-ads", "cac", "roas", "performance", "framework"],
+  "reusability": {
+    "level": "framework",
+    "score": 90,
+    "notes": "Generic multi-channel advertising performance patterns. Reusable across any Google Ads + Meta Ads setup."
+  }
+}

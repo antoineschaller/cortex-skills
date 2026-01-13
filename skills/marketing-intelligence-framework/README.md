@@ -8,32 +8,95 @@ Framework skill providing reusable patterns for campaign performance analysis, b
 
 ## Skills
 
-### campaign-analytics
-**Purpose:** Generic marketing campaign performance tracking and optimization
+### advertising-performance
+**Purpose:** Generic multi-channel advertising performance monitoring and analysis
+**Reusability:** 90% (framework)
 
 **Use Cases:**
-- Multi-channel ad spend tracking (Google Ads, Meta Ads, LinkedIn, etc.)
-- ROI/ROAS calculation and monitoring
-- Budget allocation optimization
-- Campaign performance reporting
-- Automated scaling based on performance
+- Monitor daily ad spend and conversions across platforms
+- Calculate CAC (Customer Acquisition Cost) and ROAS (Return on Ad Spend)
+- Compare performance between Google Ads and Meta Ads
+- Generate performance alerts when metrics exceed thresholds
+- Track campaign effectiveness over time
 
 **Key Features:**
-- Google Ads API integration patterns
-- Facebook/Meta Ads API integration patterns
-- Multi-channel aggregation
-- Dynamic budget allocation algorithms
-- Automated campaign scaling rules
+- Multi-platform performance tracking (Google Ads + Meta Ads)
+- Automated CAC/ROAS calculations with division-by-zero safety
+- Threshold-based alerting (CRITICAL/WARNING/SUCCESS)
+- Currency normalization to CHF/USD/EUR
+- Blended performance analysis across platforms
+- Alert generation with actionable recommendations
 
 **Key Metrics Tracked:**
 ```
-- ROAS (Return on Ad Spend)
 - CAC (Customer Acquisition Cost)
-- CPC (Cost Per Click)
+- ROAS (Return on Ad Spend)
 - CTR (Click-Through Rate)
-- Conversion Rate
-- LTV (Lifetime Value)
+- CPC (Cost Per Click)
+- Spend (normalized currency)
+- Conversions
+- Impressions
 ```
+
+### budget-optimization
+**Purpose:** Generic budget allocation and optimization patterns
+**Reusability:** 85% (framework)
+
+**Use Cases:**
+- Reallocate budget between underperforming and high-performing platforms
+- Forecast seasonal budget needs based on historical data
+- Optimize blended CAC across Google Ads + Meta Ads
+- Calculate expected impact of budget changes
+- Plan monthly/quarterly budget distribution
+
+**Key Features:**
+- Budget reallocation algorithms (platform A → platform B)
+- Seasonal budget forecasting based on historical trends
+- Marginal CAC prediction (diminishing returns curve)
+- Expected impact calculation (CAC/ROAS improvements)
+- Platform capacity utilization analysis
+
+**Key Metrics Tracked:**
+```
+- Budget allocation percentages
+- Seasonal multipliers
+- Marginal CAC at different spend levels
+- Expected blended CAC after reallocation
+- Platform capacity utilization
+```
+
+### health-monitoring
+**Purpose:** Generic health check and data freshness monitoring
+**Reusability:** 75% (framework)
+
+**Use Cases:**
+- Validate connectivity to all marketing data sources
+- Check data freshness (when was data last updated?)
+- Monitor system health before critical operations
+- Alert when data becomes stale
+- Verify API credentials and permissions
+- Detect silent failures in data pipelines
+
+**Key Features:**
+- Multi-source connectivity checks (Supabase, Airtable, APIs)
+- Data freshness validation with configurable thresholds
+- Overall health status aggregation (healthy/degraded/critical)
+- Automated alerting on critical failures
+- Historical health tracking and trend analysis
+
+**Key Metrics Tracked:**
+```
+- System connectivity status (connected/failed/degraded)
+- Data age in hours
+- Data staleness flags
+- Overall system health
+- Failed system count
+```
+
+### campaign-analytics (legacy)
+**Purpose:** Generic marketing campaign performance tracking and optimization
+
+**Note:** This skill is now supplemented by the more focused advertising-performance, budget-optimization, and health-monitoring framework skills above.
 
 ## How to Use Framework Skills
 

@@ -1,0 +1,56 @@
+{
+  "skill": "health-monitoring",
+  "version": "1.0.0",
+  "dependencies": {
+    "packages": [
+      {
+        "name": "@supabase/supabase-js",
+        "version": "latest",
+        "description": "Supabase client for database health checks"
+      },
+      {
+        "name": "airtable",
+        "version": "latest",
+        "description": "Airtable API client"
+      }
+    ],
+    "env_vars": {
+      "NEXT_PUBLIC_SUPABASE_URL": {
+        "required": true,
+        "description": "Supabase project URL",
+        "example": "https://xxxxx.supabase.co"
+      },
+      "SUPABASE_SERVICE_ROLE_KEY": {
+        "required": true,
+        "description": "Supabase service role key for admin operations"
+      },
+      "AIRTABLE_API_KEY": {
+        "required": false,
+        "description": "Airtable API key (if using Airtable)"
+      },
+      "AIRTABLE_BASE_ID": {
+        "required": false,
+        "description": "Airtable base ID (if using Airtable)"
+      }
+    },
+    "apis": [
+      {
+        "name": "Supabase Database API",
+        "auth": "Service Role Key",
+        "docs": "https://supabase.com/docs/reference/javascript"
+      },
+      {
+        "name": "Airtable API",
+        "auth": "API Key",
+        "docs": "https://airtable.com/developers/web/api/introduction"
+      }
+    ],
+    "scripts": []
+  },
+  "tags": ["health-check", "monitoring", "data-freshness", "connectivity", "system-status", "framework"],
+  "reusability": {
+    "level": "framework",
+    "score": 75,
+    "notes": "Generic health check patterns for marketing data systems. Adaptable to different data sources."
+  }
+}
