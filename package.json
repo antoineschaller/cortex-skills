@@ -32,8 +32,12 @@
   },
   "homepage": "https://github.com/antoineschaller/cortex-skills#readme",
   "devDependencies": {
+    "@akson/cortex-dev-tools": "^1.0.0",
     "@commitlint/cli": "^18.0.0",
     "@commitlint/config-conventional": "^18.0.0",
-    "husky": "^8.0.3"
-  }
+    "eslint": "^8.0.0",
+    "husky": "^8.0.3",
+    "prettier": "^3.0.0"
+  },
+  "prettier": "@akson/cortex-dev-tools/prettier"
 }
