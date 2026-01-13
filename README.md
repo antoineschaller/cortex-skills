@@ -44,9 +44,10 @@ Install only the collections you need:
 Cortex Skills teaches AI **how** to use patterns. Cortex Packages provides the **code** that implements them.
 
 - **📦 NPM Packages**: [Cortex Packages on GitHub](https://github.com/antoineschaller/cortex-packages) (private repo)
-  - 26 published packages: [@akson/cortex-* on npm](https://www.npmjs.com/search?q=%40akson%2Fcortex)
+  - 28 published packages: [@akson/cortex-* on npm](https://www.npmjs.com/search?q=%40akson%2Fcortex)
   - Auto-publishing monorepo with Lerna
-  - Supabase, Analytics, GTM, Landing Pages, and more
+  - Supabase, Analytics, GTM, Landing Pages, Dev Tools, and more
+  - **New:** [@akson/cortex-dev-tools](https://www.npmjs.com/package/@akson/cortex-dev-tools) - Shared ESLint, Prettier, and TypeScript configs
 
 - **🤝 Compatibility**: [COMPATIBILITY.md](./COMPATIBILITY.md)
   - Shows which skills work with which package versions

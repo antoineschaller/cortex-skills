@@ -6,7 +6,7 @@ This matrix shows the compatibility between Cortex NPM packages and Cortex Skill
 
 ## Overview
 
-- **Packages**: 27 published packages
+- **Packages**: 28 published packages
 - **Skills**: 6 skills with package dependencies
 - **Total Mappings**: 14 package→skill dependencies
 
@@ -35,6 +35,7 @@ The following packages don't have associated skills yet:
 
 - `@akson/cortex-agents` (0.3.0) - Comprehensive Claude agent management for @cortex ecosystem
 - `@akson/cortex-analytics-react` (2.1.0) - Reusable React analytics components and hooks for @cortex ecosystem
+- `@akson/cortex-dev-tools` (1.0.0) - Shared development tools, configs, and validators for Cortex ecosystem
 - `@akson/cortex-doc-standards` (5.0.3) - Unified documentation standards and tooling for Cortex repositories with LLM optimization
 - `@akson/cortex-forms` (0.2.0) - Reusable form state management library for React applications
 - `@akson/cortex-landing-analytics` (0.3.3) - Enhanced analytics for landing pages with lead scoring, multi-channel conversion tracking, and A/B testing support
