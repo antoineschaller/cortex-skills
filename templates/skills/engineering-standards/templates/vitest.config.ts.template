@@ -1,0 +1,70 @@
+import { defineConfig } from 'vitest/config';
+import path from 'path';
+
+export default defineConfig({
+  test: {
+    // Environment setup
+    environment: 'jsdom', // Use 'node' for backend/API tests
+    globals: true,
+
+    // Coverage configuration
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
+      exclude: [
+        'node_modules/**',
+        'dist/**',
+        '**/*.config.{js,ts}',
+        '**/*.test.{js,ts,tsx}',
+        '**/*.spec.{js,ts,tsx}',
+        '**/types.ts',
+      ],
+      // Enforce minimum coverage thresholds
+      thresholds: {
+        lines: {{coverage_threshold}},
+        functions: {{coverage_threshold}},
+        branches: {{coverage_threshold}},
+        statements: {{coverage_threshold}},
+      },
+    },
+
+    // Timeout configuration
+    testTimeout: 30000, // 30s max per test
+    hookTimeout: 30000,
+
+    // Separate test instance (if using Supabase)
+    {{#if use_supabase}}
+    setupFiles: ['./vitest.setup.ts'],
+    {{/if}}
+
+    // Pool strategy
+    pool: 'forks', // Use 'threads' for faster tests without side effects
+    poolOptions: {
+      forks: {
+        singleFork: false,
+      },
+    },
+
+    // Retry failed tests
+    retry: 1,
+
+    // Watch mode settings
+    watch: false, // Disable in CI
+  },
+
+  resolve: {
+    alias: {
+      {{#if framework === 'nextjs'}}
+      '@/': path.resolve(__dirname, './'),
+      '@/lib': path.resolve(__dirname, './lib'),
+      '@/components': path.resolve(__dirname, './components'),
+      '@/app': path.resolve(__dirname, './app'),
+      {{/if}}
+      {{#if features.monorepo}}
+      '@kit/ui': path.resolve(__dirname, '../../packages/ui/src'),
+      '@kit/database': path.resolve(__dirname, '../../packages/database/src'),
+      '@kit/shared': path.resolve(__dirname, '../../packages/shared/src'),
+      {{/if}}
+    },
+  },
+});

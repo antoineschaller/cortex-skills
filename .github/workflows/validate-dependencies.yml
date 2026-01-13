@@ -1,0 +1,42 @@
+name: Validate Dependencies
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'skills/**/skill.config.json'
+      - 'scripts/validate-package-deps.js'
+      - '.github/workflows/validate-dependencies.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'skills/**/skill.config.json'
+      - 'scripts/validate-package-deps.js'
+      - '.github/workflows/validate-dependencies.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Validate Package Dependencies
+        run: node scripts/validate-package-deps.js
+
+      - name: Comment on PR (if failed)
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ **Package Dependency Validation Failed**\n\nSome skills reference invalid package versions. Please check the logs and update the skill.config.json files.\n\nSee the [action logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details.'
+            })

@@ -1,0 +1,278 @@
+# CLAUDE.md
+
+Guidance for Claude Code when working with {{project_name}}.
+
+## Tech Stack
+
+{{tech_stack}}
+
+## Project Structure
+
+```
+{{project_name}}/
+├── {{apps_directory}}/              # Applications (deployable)
+├── {{packages_directory}}/          # Shared packages (libraries)
+├── {{docs_directory}}/              # Documentation
+│   ├── wip/active/                  # Work in progress (temporary)
+│   ├── guides/                      # Permanent guides
+│   └── architecture/                # Architecture decisions
+└── .claude/                         # Claude Code configuration
+    ├── skills/                      # Custom skills
+    ├── agents/                      # Custom agents
+    └── context/                     # Context files
+```
+
+## Essential Commands
+
+```bash
+# Development
+{{commands.install}}     # Install dependencies
+{{commands.dev}}         # Start development server
+{{commands.build}}       # Build for production
+
+# Quality
+{{commands.quality}}     # Run full quality gate (format, lint, typecheck, test, build)
+{{commands.test}}        # Run tests
+
+# Database (if applicable)
+{{commands.db_reset}}    # Reset local database
+{{commands.typegen}}     # Generate database types
+```
+
+## Critical Rules (NO EXCEPTIONS)
+
+1. **No Version/Enhancement Suffixes**: Never use suffixes like `-v2`, `-v3`, `-improved`, `-enhanced`, `-new`, `-updated`, `-unified` on files OR functions. Modify the original directly. FORBIDDEN: `user-v2.ts`, `createUserEnhanced()`, `FormV3`, `UnifiedService`, `handleSubmitNew()`. **If found: RENAME the file/function to remove the suffix - NEVER delete.**
+
+2. **Documentation Location Rules**:
+   - **NEVER** create .md files in repo root (except CLAUDE.md, README.md, CHANGELOG.md)
+   - **Temporary work** → {{wip_directory}}/WIP_{gerund}_{YYYY_MM_DD}.md
+   - **Bug investigations** → {{wip_directory}}/BUG_INVESTIGATION_{description}_{YYYY_MM_DD}.md
+   - **Permanent guides** → {{docs_directory}}/guides/{kebab-case}.md
+   - **Architecture docs** → {{docs_directory}}/architecture/{kebab-case}.md
+
+3. **Git Repository Lock**: Always use `gh --repo {{github_org}}/{{github_repo}} ...` for GitHub CLI commands
+
+4. **Server Components Default**: Use Server Components by default, `'use client'` only when needed (onClick, useState, browser APIs)
+
+5. **No Unused Variables**: Remove unused imports/vars. Prefix intentional unused with `_`
+
+6. **Environment Variables**: Check `.env.local` first, never hardcode secrets. Use `{{env_file}}.example` as reference.
+
+7. **No Deferred Work**: NEVER mark work as "deferred", "TODO", "future", or "out of scope". Complete ALL items before marking done.
+
+8. **Fix Pre-existing Issues**: When you detect pre-existing errors, even unrelated to your changes, fix them immediately without asking.
+
+<!-- Framework-specific critical rules (add as needed) -->
+{{#if use_supabase}}
+9. **Migrations Only**: Never direct psql. Use `{{migrations_directory}}/`
+
+10. **RLS First**: Use userClient + RLS, not admin client for queries
+
+11. **Migration Idempotency**: All migrations must use IF NOT EXISTS / IF EXISTS patterns
+{{/if}}
+
+## Core Patterns
+
+### Result Pattern (Services)
+
+```typescript
+// All services return Result<T, E> - NEVER throw exceptions
+type Result<T, E = Error> =
+  | { success: true; data: T }
+  | { success: false; error: E };
+
+// Service method example
+async create(data: InsertType): Promise<Result<RowType, ServiceError>> {
+  const { data: result, error } = await this.client
+    .from('table')
+    .insert(data)
+    .single();
+
+  if (error) {
+    this.logger.error('Create failed', { error, data });
+    return {
+      success: false,
+      error: new ServiceError(error.message, 'CREATE_FAILED')
+    };
+  }
+
+  return { success: true, data: result };
+}
+```
+
+{{#if framework === 'nextjs'}}
+### Server Actions Pattern
+
+```typescript
+'use server';
+
+import { withAuthParams } from '@/lib/auth-wrappers';
+import { revalidatePath } from 'next/cache';
+
+export const createItemAction = withAuthParams(async (params, formData: FormData) => {
+  const validated = CreateItemSchema.safeParse(Object.fromEntries(formData));
+  if (!validated.success) {
+    return { success: false, error: validated.error.flatten() };
+  }
+
+  const service = new ItemService(params.client);
+  const result = await service.create(validated.data);
+
+  if (result.success) {
+    revalidatePath('/items');
+  }
+
+  return result;
+});
+```
+
+### Server vs Client Components
+
+```
+Server Component (default):     Client Component ('use client'):
+- Data fetching                 - onClick, onChange handlers
+- Database access               - useState, useEffect hooks
+- Sensitive logic               - Browser APIs (localStorage)
+- No interactivity             - Real-time subscriptions
+```
+{{/if}}
+
+{{#if use_supabase}}
+### RLS-First Pattern
+
+```typescript
+// ✅ Default: userClient + RLS
+const client = getSupabaseServerClient();
+const { data } = await client.from('events').select('*'); // RLS enforced
+
+// ⚠️ Admin client: Only when necessary with validation
+const isSuperAdmin = await checkIsSuperAdmin();
+if (!isSuperAdmin) throw new Error('Unauthorized');
+const adminClient = getSupabaseServerAdminClient();
+```
+{{/if}}
+
+### Zod Validation
+
+```typescript
+import { z } from 'zod';
+
+const CreateItemSchema = z.object({
+  name: z.string().min(1).max(100).transform(v => v.trim()),
+  email: z.string().email().toLowerCase(),
+  amount: z.coerce.number().positive(),
+  date: z.coerce.date(),
+});
+```
+
+## Naming Conventions
+
+- Files: `kebab-case` (user-form.tsx)
+- Components: `PascalCase` (UserForm)
+- Variables: `camelCase` (userName)
+- Constants: `SCREAMING_SNAKE_CASE` (MAX_USERS)
+- Imports: Framework packages first, then `@/` alias
+- No `@ts-ignore` or `@ts-expect-error` - fix the type properly
+
+{{#if features.monorepo}}
+## Monorepo Commands
+
+```bash
+# Run command in specific package
+{{package_manager}} --filter {{main_app_name}} dev
+
+# Run in all packages
+{{package_manager}} -r dev
+
+# Build all packages
+{{package_manager}} turbo build
+
+# Build only affected packages
+{{package_manager}} turbo build --filter=[origin/{{default_branch}}]
+```
+{{/if}}
+
+## Hooks (Auto-Enforced)
+
+Hooks in `.claude/settings.json`:
+- **PreToolUse**: Blocks forbidden suffixes (`-v2`, `-new`) and direct DB modifications
+- **PostToolUse**: Warns if migrations lack `IF NOT EXISTS` / `IF EXISTS`
+
+Git hooks in `lefthook.yml`:
+- **Pre-commit (2-5s)**: Format, RLS validation, WIP checks, migration idempotency validation
+- **Pre-push (30-60s)**: Lint, typecheck, lockfile sync, DB type validation
+
+## Commit Format
+
+```
+<type>: <description> (<reference>)
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+```
+
+**Types**: `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`
+
+**Examples**:
+```bash
+feat: add user authentication (closes #42)
+fix: resolve email validation bug (refs #56)
+refactor: simplify API client
+```
+
+## Branch Naming
+
+- Feature: `feat/description`
+- Fix: `fix/description`
+- Refactor: `refactor/description`
+- Docs: `docs/description`
+
+## Skills (On-Demand Knowledge)
+
+{{#if skills}}
+Invoke skills for detailed patterns:
+
+{{#each skills}}
+| {{this.category}} | {{this.name}} |
+{{/each}}
+{{else}}
+<!-- Add skills as needed for your project -->
+{{/if}}
+
+## Agents (Custom + Built-in)
+
+{{#if agents}}
+Use Task tool with these agents:
+
+| Task | Agent | Model |
+|------|-------|-------|
+{{#each agents}}
+| {{this.task}} | `{{this.name}}` | {{this.model}} |
+{{/each}}
+{{else}}
+<!-- Add custom agents as needed -->
+{{/if}}
+
+## Architecture Notes
+
+<!-- Add project-specific architecture notes -->
+
+{{#if use_supabase}}
+### Database
+- **RLS**: All tables use Row Level Security
+- **Super admin bypass**: `is_super_admin()` function
+- **Migrations**: Idempotent with IF NOT EXISTS patterns
+{{/if}}
+
+{{#if features.monorepo}}
+### Monorepo
+- **Package structure**: apps/ (deployable) vs packages/ (shared)
+- **Workspace protocol**: Use `workspace:*` for local packages
+- **Build order**: Turborepo handles dependency-aware builds
+{{/if}}
+
+## Full Documentation
+
+- Context files: `.claude/context/`
+- Skills: `.claude/skills/*/`
+- Agents: `.claude/agents/*.md`
+- Architecture: `{{docs_directory}}/`

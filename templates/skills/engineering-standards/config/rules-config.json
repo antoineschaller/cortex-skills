@@ -1,0 +1,360 @@
+{
+  "version": "1.0.0",
+  "description": "Validation rules for engineering standards compliance checking",
+
+  "hooks": {
+    "enabled": true,
+    "required_files": [
+      {
+        "path": ".lefthook.yml",
+        "description": "Git hooks configuration"
+      },
+      {
+        "path": ".claude/settings.json",
+        "description": "Claude Code hooks configuration"
+      }
+    ],
+    "pre_commit_commands": [
+      "format",
+      "wip-validation",
+      "migration-idempotency",
+      "rls-validation"
+    ],
+    "pre_push_commands": [
+      "oxlint",
+      "typecheck",
+      "lockfile-sync"
+    ],
+    "claude_hooks": {
+      "pre_tool_use": [
+        "forbidden-suffixes",
+        "root-md-files",
+        "direct-db-modifications"
+      ],
+      "post_tool_use": [
+        "migration-warnings"
+      ]
+    }
+  },
+
+  "documentation": {
+    "enabled": true,
+    "required_files": [
+      {
+        "path": "CLAUDE.md",
+        "description": "Project instructions for Claude Code"
+      },
+      {
+        "path": "README.md",
+        "description": "Project overview and getting started"
+      }
+    ],
+    "required_claude_sections": [
+      "Tech Stack",
+      "Project Structure",
+      "Essential Commands",
+      "Critical Rules",
+      "Core Patterns"
+    ],
+    "wip_directory": "docs/wip/active",
+    "guides_directory": "docs/guides",
+    "architecture_directory": "docs/architecture",
+    "max_wip_age_days": 7,
+    "forbidden_root_files": [
+      "*.md"
+    ],
+    "allowed_root_files": [
+      "CLAUDE.md",
+      "README.md",
+      "CHANGELOG.md",
+      "CONTRIBUTING.md",
+      "LICENSE.md"
+    ]
+  },
+
+  "testing": {
+    "enabled": true,
+    "vitest": {
+      "required": true,
+      "config_file": "vitest.config.ts",
+      "min_coverage_percent": 80,
+      "required_scripts": [
+        "test",
+        "test:coverage"
+      ]
+    },
+    "playwright": {
+      "required_for_web": true,
+      "config_file": "playwright.config.ts",
+      "required_scripts": [
+        "test:e2e"
+      ]
+    },
+    "flutter": {
+      "required_for_flutter": true,
+      "test_directory": "test",
+      "required_scripts": [
+        "flutter test"
+      ]
+    }
+  },
+
+  "quality_gates": {
+    "enabled": true,
+    "eslint": {
+      "required": true,
+      "config_file": "eslint.config.mjs",
+      "custom_plugins": [
+        "react-providers",
+        "i18n"
+      ]
+    },
+    "typescript": {
+      "required": true,
+      "config_file": "tsconfig.json",
+      "strict_mode": true,
+      "required_options": {
+        "strict": true,
+        "noUncheckedIndexedAccess": true,
+        "noImplicitReturns": true,
+        "forceConsistentCasingInFileNames": true
+      }
+    },
+    "prettier": {
+      "required": true,
+      "config_file": ".prettierrc"
+    },
+    "quality_script": {
+      "required": true,
+      "name": "quality",
+      "must_include": [
+        "format",
+        "lint",
+        "typecheck",
+        "test",
+        "build"
+      ]
+    }
+  },
+
+  "git": {
+    "enabled": true,
+    "gitignore": {
+      "required": true,
+      "must_include": [
+        "node_modules/",
+        ".env.local",
+        ".turbo",
+        "dist/",
+        ".next/"
+      ]
+    },
+    "branch_protection": {
+      "required_for_production": true,
+      "protected_branches": ["main", "production"],
+      "required_checks": [
+        "format",
+        "lint",
+        "typecheck",
+        "test",
+        "build"
+      ]
+    }
+  },
+
+  "security": {
+    "enabled": true,
+    "env_files": {
+      "example_file_required": true,
+      "example_file_name": ".env.local.example",
+      "no_secrets_in_code": true
+    },
+    "rls_policies": {
+      "required_for_supabase": true,
+      "migrations_directory": "supabase/migrations"
+    }
+  },
+
+  "naming_conventions": {
+    "enabled": true,
+    "files": {
+      "style": "kebab-case",
+      "forbidden_suffixes": [
+        "-v2",
+        "-v3",
+        "-improved",
+        "-enhanced",
+        "-new",
+        "-updated",
+        "-unified",
+        "-refactored"
+      ]
+    },
+    "components": {
+      "style": "PascalCase"
+    },
+    "functions": {
+      "forbidden_suffixes": [
+        "V2",
+        "V3",
+        "Improved",
+        "Enhanced",
+        "New",
+        "Updated"
+      ]
+    }
+  },
+
+  "migrations": {
+    "enabled_for_supabase": true,
+    "idempotency_required": true,
+    "forbidden_commands": [
+      "psql"
+    ],
+    "required_patterns": {
+      "create_table": "IF NOT EXISTS",
+      "create_index": "IF NOT EXISTS",
+      "create_policy": "DO $$ block wrapper",
+      "create_trigger": "DROP TRIGGER IF EXISTS",
+      "add_constraint": "DO $$ block wrapper",
+      "add_column": "IF NOT EXISTS"
+    }
+  },
+
+  "monorepo": {
+    "enabled_for_monorepo": true,
+    "workspace_config": {
+      "pnpm": "pnpm-workspace.yaml",
+      "npm": "package.json workspaces",
+      "yarn": "package.json workspaces"
+    },
+    "turborepo": {
+      "config_file": "turbo.json",
+      "required_pipelines": [
+        "build",
+        "lint",
+        "typecheck",
+        "test"
+      ]
+    },
+    "lockfile_discipline": {
+      "validate_on_pre_push": true,
+      "frozen_installs_in_ci": true
+    }
+  },
+
+  "severity_levels": {
+    "critical": {
+      "description": "Must fix before merge",
+      "exit_code": 2,
+      "examples": [
+        "Missing CLAUDE.md",
+        "Non-idempotent migration",
+        "Version suffixes in code",
+        "Secrets in code"
+      ]
+    },
+    "warning": {
+      "description": "Should fix, but not blocking",
+      "exit_code": 1,
+      "examples": [
+        "Stale WIP file",
+        "Missing test coverage",
+        "Missing ESLint plugin"
+      ]
+    },
+    "info": {
+      "description": "Informational, no action required",
+      "exit_code": 0,
+      "examples": [
+        "Optional documentation missing",
+        "Recommended pattern not used"
+      ]
+    }
+  },
+
+  "validation_categories": {
+    "hooks": {
+      "enabled": true,
+      "weight": 15
+    },
+    "documentation": {
+      "enabled": true,
+      "weight": 15
+    },
+    "testing": {
+      "enabled": true,
+      "weight": 15
+    },
+    "quality_gates": {
+      "enabled": true,
+      "weight": 15
+    },
+    "git": {
+      "enabled": true,
+      "weight": 10
+    },
+    "security": {
+      "enabled": true,
+      "weight": 15
+    },
+    "naming_conventions": {
+      "enabled": true,
+      "weight": 10
+    },
+    "migrations": {
+      "enabled": true,
+      "weight": 5
+    }
+  },
+
+  "compliance_grading": {
+    "A": {
+      "min_percent": 95,
+      "description": "Excellent - Full compliance"
+    },
+    "B": {
+      "min_percent": 85,
+      "description": "Good - Minor improvements needed"
+    },
+    "C": {
+      "min_percent": 70,
+      "description": "Acceptable - Several improvements needed"
+    },
+    "D": {
+      "min_percent": 50,
+      "description": "Poor - Significant work required"
+    },
+    "F": {
+      "min_percent": 0,
+      "description": "Failing - Major compliance issues"
+    }
+  },
+
+  "customization": {
+    "allow_rule_overrides": true,
+    "project_config_file": ".engineering-standards.json",
+    "override_examples": {
+      "disable_category": {
+        "migrations": {
+          "enabled": false
+        }
+      },
+      "adjust_threshold": {
+        "testing": {
+          "vitest": {
+            "min_coverage_percent": 90
+          }
+        }
+      },
+      "add_custom_rule": {
+        "custom_rules": {
+          "no_console_log": {
+            "enabled": true,
+            "severity": "warning"
+          }
+        }
+      }
+    }
+  }
+}

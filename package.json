@@ -1,0 +1,39 @@
+{
+  "name": "cortex-skills",
+  "version": "1.0.0",
+  "description": "Reusable Claude Code skills and agents for e-commerce, analytics, and development",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "validate": "node scripts/validation/validate-skill-config.sh",
+    "validate:deps": "node scripts/validate-package-deps.js",
+    "assess": "scripts/assessment/assess-reusability.sh",
+    "generate:compatibility": "node scripts/generate-compatibility-matrix.js",
+    "lint:commit": "commitlint --edit",
+    "prepare": "command -v husky >/dev/null 2>&1 && husky install || true"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/antoineschaller/cortex-skills.git"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "skills",
+    "agents",
+    "ai",
+    "development",
+    "patterns"
+  ],
+  "author": "Antoine Schaller",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/antoineschaller/cortex-skills/issues"
+  },
+  "homepage": "https://github.com/antoineschaller/cortex-skills#readme",
+  "devDependencies": {
+    "@commitlint/cli": "^18.0.0",
+    "@commitlint/config-conventional": "^18.0.0",
+    "husky": "^8.0.3"
+  }
+}

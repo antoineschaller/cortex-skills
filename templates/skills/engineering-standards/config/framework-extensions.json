@@ -1,0 +1,413 @@
+{
+  "version": "1.0.0",
+  "description": "Framework-specific extensions and patterns for engineering standards",
+
+  "nextjs": {
+    "version_range": ">=15.0.0",
+    "description": "Next.js specific patterns and standards",
+
+    "required_files": [
+      "next.config.js",
+      "tsconfig.json",
+      ".eslintrc.json"
+    ],
+
+    "recommended_structure": {
+      "app_router": {
+        "path": "app/",
+        "description": "App Router (Next.js 13+)",
+        "patterns": [
+          "app/(routes)/",
+          "app/api/",
+          "app/_components/",
+          "app/_lib/"
+        ]
+      },
+      "public": {
+        "path": "public/",
+        "description": "Static assets"
+      },
+      "lib": {
+        "path": "lib/",
+        "description": "Shared utilities and helpers"
+      }
+    },
+
+    "critical_patterns": {
+      "server_components": {
+        "default": true,
+        "description": "Use Server Components by default, 'use client' only when needed"
+      },
+      "async_params": {
+        "required": true,
+        "description": "Next.js 15+ requires async params and searchParams",
+        "example": "export default async function Page({ params }: { params: Promise<{ id: string }> })"
+      },
+      "metadata": {
+        "required": true,
+        "description": "Use generateMetadata for dynamic metadata",
+        "example": "export async function generateMetadata({ params }): Promise<Metadata>"
+      }
+    },
+
+    "quality_config": {
+      "next_config": {
+        "typescript": {
+          "ignoreBuildErrors": false
+        },
+        "eslint": {
+          "ignoreDuringBuilds": false
+        }
+      }
+    },
+
+    "dependencies": {
+      "required": [
+        "next",
+        "react",
+        "react-dom"
+      ],
+      "recommended": [
+        "zod",
+        "@supabase/supabase-js",
+        "server-only"
+      ]
+    }
+  },
+
+  "flutter": {
+    "version_range": ">=3.0.0",
+    "description": "Flutter specific patterns and standards",
+
+    "required_files": [
+      "pubspec.yaml",
+      "analysis_options.yaml",
+      "lib/main.dart"
+    ],
+
+    "recommended_structure": {
+      "core": {
+        "path": "lib/core/",
+        "description": "Core utilities, theme, guards",
+        "patterns": [
+          "lib/core/theme/",
+          "lib/core/guards/",
+          "lib/core/utils/"
+        ]
+      },
+      "modules": {
+        "path": "lib/modules/",
+        "description": "Feature modules",
+        "patterns": [
+          "lib/modules/auth/",
+          "lib/modules/profile/",
+          "lib/modules/events/"
+        ]
+      },
+      "test": {
+        "path": "test/",
+        "description": "Test files mirroring lib/ structure"
+      }
+    },
+
+    "critical_patterns": {
+      "riverpod": {
+        "version": "3.x",
+        "description": "State management with Riverpod 3.x",
+        "code_generation": true
+      },
+      "freezed": {
+        "description": "Immutable data models with Freezed",
+        "required_for_models": true
+      },
+      "golden_tests": {
+        "description": "Golden tests for widget consistency",
+        "recommended": true
+      }
+    },
+
+    "quality_config": {
+      "analysis_options": {
+        "include": "package:flutter_lints/flutter.yaml",
+        "strict": true
+      }
+    },
+
+    "dependencies": {
+      "required": [
+        "flutter",
+        "riverpod",
+        "freezed_annotation",
+        "json_annotation"
+      ],
+      "dev_required": [
+        "build_runner",
+        "freezed",
+        "json_serializable",
+        "riverpod_generator"
+      ]
+    }
+  },
+
+  "makerkit": {
+    "version_range": ">=2.0.0",
+    "description": "MakerKit specific patterns",
+    "base_framework": "nextjs",
+
+    "recommended_structure": {
+      "kit_packages": {
+        "path": "packages/@kit/",
+        "description": "MakerKit UI and utility packages",
+        "packages": [
+          "@kit/ui",
+          "@kit/shared",
+          "@kit/supabase"
+        ]
+      }
+    },
+
+    "critical_patterns": {
+      "ui_components": {
+        "description": "Use @kit/ui components first before custom",
+        "import_pattern": "import { Button } from '@kit/ui/button';"
+      },
+      "server_actions": {
+        "description": "Use withAuthParams wrapper for server actions",
+        "example": "export const action = withAuthParams(async (params, data) => {})"
+      },
+      "rls_first": {
+        "description": "Use userClient + RLS, not admin client",
+        "pattern": "const client = getSupabaseServerClient();"
+      }
+    },
+
+    "dependencies": {
+      "required": [
+        "@kit/ui",
+        "@kit/shared",
+        "@kit/supabase"
+      ]
+    }
+  },
+
+  "apparencekit": {
+    "version_range": ">=1.0.0",
+    "description": "ApparenceKit specific patterns",
+    "base_framework": "flutter",
+
+    "recommended_structure": {
+      "three_layer": {
+        "description": "3-layer architecture",
+        "layers": {
+          "data": "API calls and data sources",
+          "domain": "Repository pattern and business logic",
+          "presentation": "UI and state management"
+        }
+      }
+    },
+
+    "critical_patterns": {
+      "repository_pattern": {
+        "description": "Data → Repository → UI flow",
+        "required": true
+      }
+    }
+  },
+
+  "supabase": {
+    "version_range": ">=2.0.0",
+    "description": "Supabase specific patterns",
+
+    "required_files": [
+      "supabase/config.toml",
+      "supabase/migrations/"
+    ],
+
+    "critical_patterns": {
+      "migrations": {
+        "idempotent": true,
+        "use_if_not_exists": true,
+        "no_direct_psql": true,
+        "directory": "supabase/migrations/"
+      },
+      "rls_policies": {
+        "required": true,
+        "super_admin_bypass": "is_super_admin()",
+        "test_coverage_required": true
+      },
+      "type_generation": {
+        "command": "supabase gen types typescript --local > lib/database.types.ts",
+        "frequency": "After each migration"
+      }
+    },
+
+    "quality_config": {
+      "db_type_validation": {
+        "pre_push_check": true,
+        "script": "Validate types match schema"
+      }
+    },
+
+    "dependencies": {
+      "required": [
+        "@supabase/supabase-js"
+      ]
+    }
+  },
+
+  "turborepo": {
+    "version_range": ">=2.0.0",
+    "description": "Turborepo monorepo patterns",
+
+    "required_files": [
+      "turbo.json",
+      "pnpm-workspace.yaml"
+    ],
+
+    "critical_patterns": {
+      "caching": {
+        "enabled": true,
+        "remote_cache": "Recommended for teams"
+      },
+      "affected_packages": {
+        "description": "Only build/test affected packages",
+        "command": "turbo build --filter=[origin/main]"
+      },
+      "pipeline": {
+        "build": {
+          "dependsOn": ["^build"],
+          "outputs": [".next/**", "dist/**"]
+        },
+        "test": {
+          "dependsOn": ["^build"]
+        }
+      }
+    },
+
+    "dependencies": {
+      "required": [
+        "turbo"
+      ]
+    }
+  },
+
+  "vitest": {
+    "version_range": ">=2.0.0",
+    "description": "Vitest testing patterns",
+
+    "required_files": [
+      "vitest.config.ts"
+    ],
+
+    "critical_patterns": {
+      "coverage": {
+        "threshold": 80,
+        "provider": "v8"
+      },
+      "dual_client": {
+        "description": "Separate user and admin clients for RLS testing",
+        "required_for_supabase": true
+      }
+    },
+
+    "dependencies": {
+      "required": [
+        "vitest",
+        "@vitest/coverage-v8"
+      ]
+    }
+  },
+
+  "playwright": {
+    "version_range": ">=1.40.0",
+    "description": "Playwright E2E testing patterns",
+
+    "required_files": [
+      "playwright.config.ts"
+    ],
+
+    "critical_patterns": {
+      "projects": {
+        "description": "Separate projects for different auth states",
+        "example": ["logged-out", "logged-in-user", "logged-in-admin"]
+      },
+      "rls_testing": {
+        "description": "Test RLS policies with different user contexts",
+        "required_for_supabase": true
+      }
+    },
+
+    "dependencies": {
+      "required": [
+        "@playwright/test"
+      ]
+    }
+  },
+
+  "eslint": {
+    "version_range": ">=9.0.0",
+    "description": "ESLint configuration patterns",
+
+    "required_files": [
+      "eslint.config.mjs"
+    ],
+
+    "critical_patterns": {
+      "flat_config": {
+        "description": "Use flat config (ESLint 9+)",
+        "required": true
+      },
+      "custom_plugins": {
+        "description": "Custom plugins in tools/ directory",
+        "examples": [
+          "react-providers",
+          "i18n",
+          "react-form-fields"
+        ]
+      }
+    },
+
+    "dependencies": {
+      "required": [
+        "eslint",
+        "@typescript-eslint/eslint-plugin"
+      ]
+    }
+  },
+
+  "extension_priority": {
+    "description": "Order of precedence when multiple frameworks apply",
+    "order": [
+      "project_type",
+      "framework_specific",
+      "database",
+      "testing",
+      "monorepo",
+      "linting"
+    ]
+  },
+
+  "conflict_resolution": {
+    "description": "How to handle conflicting patterns",
+    "rules": {
+      "explicit_over_implicit": "Explicit project configuration overrides framework defaults",
+      "specific_over_general": "Framework-specific patterns override generic patterns",
+      "user_config_wins": "Project .engineering-standards.json overrides everything"
+    }
+  },
+
+  "customization": {
+    "project_config_file": ".engineering-standards.json",
+    "example": {
+      "framework_extensions": {
+        "nextjs": {
+          "critical_patterns": {
+            "server_components": {
+              "default": false
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,425 @@
+{
+  "version": "1.0.0",
+  "description": "Template variables for project customization and bootstrapping",
+
+  "project_metadata": {
+    "name": {
+      "type": "string",
+      "description": "Project name (e.g., 'My Project')",
+      "required": true,
+      "default": "My Project",
+      "validation": {
+        "min_length": 1,
+        "max_length": 100
+      }
+    },
+    "slug": {
+      "type": "string",
+      "description": "Project slug for URLs and identifiers (e.g., 'my-project')",
+      "required": true,
+      "default": "{{name | slugify}}",
+      "validation": {
+        "pattern": "^[a-z0-9-]+$"
+      }
+    },
+    "description": {
+      "type": "string",
+      "description": "Project description for README and package.json",
+      "required": false,
+      "default": "A modern web application"
+    },
+    "author": {
+      "type": "string",
+      "description": "Project author/organization",
+      "required": false,
+      "default": "Your Name"
+    },
+    "repository": {
+      "type": "string",
+      "description": "Git repository URL",
+      "required": false,
+      "default": "https://github.com/{{author | slugify}}/{{slug}}"
+    },
+    "license": {
+      "type": "string",
+      "description": "Project license (MIT, Apache-2.0, etc.)",
+      "required": false,
+      "default": "MIT"
+    }
+  },
+
+  "project_type": {
+    "type": {
+      "type": "enum",
+      "description": "Project type",
+      "required": true,
+      "options": [
+        "nextjs",
+        "flutter",
+        "monorepo",
+        "backend",
+        "fullstack"
+      ],
+      "default": "nextjs"
+    },
+    "framework": {
+      "type": "string",
+      "description": "Framework/boilerplate (e.g., MakerKit, ApparenceKit)",
+      "required": false,
+      "default": null
+    }
+  },
+
+  "tech_stack": {
+    "language": {
+      "type": "enum",
+      "options": ["typescript", "javascript", "dart", "python"],
+      "default": "typescript"
+    },
+    "runtime": {
+      "type": "enum",
+      "options": ["node", "bun", "deno"],
+      "default": "node"
+    },
+    "node_version": {
+      "type": "string",
+      "default": "20.0.0",
+      "validation": {
+        "pattern": "^\\d+\\.\\d+\\.\\d+$"
+      }
+    },
+    "package_manager": {
+      "type": "enum",
+      "options": ["pnpm", "npm", "yarn"],
+      "default": "pnpm"
+    },
+    "package_manager_version": {
+      "type": "string",
+      "default": "9.15.1"
+    }
+  },
+
+  "features": {
+    "database": {
+      "type": "enum",
+      "options": ["supabase", "postgres", "mysql", "mongodb", "none"],
+      "default": "supabase"
+    },
+    "auth": {
+      "type": "boolean",
+      "default": true
+    },
+    "testing": {
+      "unit": {
+        "type": "boolean",
+        "default": true,
+        "framework": "vitest"
+      },
+      "e2e": {
+        "type": "boolean",
+        "default": true,
+        "framework": "playwright"
+      }
+    },
+    "linting": {
+      "type": "boolean",
+      "default": true,
+      "tools": ["eslint", "prettier"]
+    },
+    "monorepo": {
+      "type": "boolean",
+      "default": false,
+      "tools": ["turborepo", "pnpm-workspaces"]
+    }
+  },
+
+  "paths": {
+    "root": {
+      "type": "string",
+      "description": "Project root directory",
+      "default": "."
+    },
+    "apps": {
+      "type": "string",
+      "description": "Applications directory (monorepo)",
+      "default": "apps"
+    },
+    "packages": {
+      "type": "string",
+      "description": "Packages directory (monorepo)",
+      "default": "packages"
+    },
+    "docs": {
+      "type": "string",
+      "description": "Documentation directory",
+      "default": "docs"
+    },
+    "wip": {
+      "type": "string",
+      "description": "WIP files directory",
+      "default": "docs/wip/active"
+    },
+    "migrations": {
+      "type": "string",
+      "description": "Database migrations directory",
+      "default": "supabase/migrations"
+    },
+    "claude": {
+      "type": "string",
+      "description": "Claude Code configuration directory",
+      "default": ".claude"
+    }
+  },
+
+  "commands": {
+    "install": {
+      "type": "string",
+      "description": "Install dependencies command",
+      "default": "{{package_manager}} install"
+    },
+    "dev": {
+      "type": "string",
+      "description": "Start development server",
+      "default": "{{package_manager}} dev"
+    },
+    "build": {
+      "type": "string",
+      "description": "Build for production",
+      "default": "{{package_manager}} build"
+    },
+    "test": {
+      "type": "string",
+      "description": "Run tests",
+      "default": "{{package_manager}} test"
+    },
+    "quality": {
+      "type": "string",
+      "description": "Run full quality gate",
+      "default": "{{package_manager}} quality"
+    },
+    "db_reset": {
+      "type": "string",
+      "description": "Reset local database",
+      "default": "{{package_manager}} supabase:reset",
+      "condition": "database === 'supabase'"
+    },
+    "typegen": {
+      "type": "string",
+      "description": "Generate database types",
+      "default": "{{package_manager}} supabase:typegen",
+      "condition": "database === 'supabase'"
+    }
+  },
+
+  "git": {
+    "default_branch": {
+      "type": "string",
+      "default": "main",
+      "options": ["main", "dev"]
+    },
+    "github_org": {
+      "type": "string",
+      "description": "GitHub organization or username",
+      "required": false,
+      "default": null
+    },
+    "github_repo": {
+      "type": "string",
+      "description": "GitHub repository name",
+      "required": false,
+      "default": "{{slug}}"
+    }
+  },
+
+  "hooks": {
+    "use_lefthook": {
+      "type": "boolean",
+      "default": true
+    },
+    "use_claude_hooks": {
+      "type": "boolean",
+      "default": true
+    },
+    "pre_commit_checks": {
+      "type": "array",
+      "default": ["format", "wip-validation", "migration-idempotency"]
+    },
+    "pre_push_checks": {
+      "type": "array",
+      "default": ["oxlint", "typecheck", "lockfile-sync"]
+    }
+  },
+
+  "quality": {
+    "coverage_threshold": {
+      "type": "number",
+      "default": 80,
+      "validation": {
+        "min": 0,
+        "max": 100
+      }
+    },
+    "eslint_plugins": {
+      "type": "array",
+      "default": ["@typescript-eslint", "react-hooks"]
+    },
+    "prettier_config": {
+      "semi": true,
+      "singleQuote": true,
+      "trailingComma": "all",
+      "printWidth": 100,
+      "tabWidth": 2
+    }
+  },
+
+  "documentation": {
+    "generate_claude_md": {
+      "type": "boolean",
+      "default": true
+    },
+    "use_cortex_doc_standards": {
+      "type": "boolean",
+      "default": true,
+      "description": "Use cortex-doc-standards for CLAUDE.md generation"
+    },
+    "wip_max_age_days": {
+      "type": "number",
+      "default": 7
+    },
+    "required_sections": {
+      "type": "array",
+      "default": [
+        "Tech Stack",
+        "Project Structure",
+        "Essential Commands",
+        "Critical Rules",
+        "Core Patterns"
+      ]
+    }
+  },
+
+  "ci_cd": {
+    "use_github_actions": {
+      "type": "boolean",
+      "default": true
+    },
+    "workflows": {
+      "type": "array",
+      "default": ["quality-gate", "deploy"]
+    },
+    "branch_protection": {
+      "type": "boolean",
+      "default": true,
+      "protected_branches": ["main", "production"]
+    }
+  },
+
+  "environment": {
+    "env_file": {
+      "type": "string",
+      "default": ".env.local"
+    },
+    "env_example_file": {
+      "type": "string",
+      "default": ".env.local.example"
+    },
+    "use_1password": {
+      "type": "boolean",
+      "default": false
+    },
+    "required_env_vars": {
+      "type": "array",
+      "default": [],
+      "examples": [
+        "DATABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_URL",
+        "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+      ]
+    }
+  },
+
+  "security": {
+    "rls_enabled": {
+      "type": "boolean",
+      "default": true,
+      "condition": "database === 'supabase'"
+    },
+    "audit_logging": {
+      "type": "boolean",
+      "default": false
+    },
+    "secret_scanning": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+
+  "monorepo_config": {
+    "workspace_packages": {
+      "type": "array",
+      "default": ["apps/*", "packages/*"],
+      "condition": "features.monorepo === true"
+    },
+    "shared_packages": {
+      "type": "array",
+      "default": ["@kit/ui", "@kit/database", "@kit/shared"],
+      "condition": "features.monorepo === true"
+    },
+    "use_turborepo": {
+      "type": "boolean",
+      "default": true,
+      "condition": "features.monorepo === true"
+    }
+  },
+
+  "substitution_examples": {
+    "CLAUDE.md": {
+      "project_name": "{{project_metadata.name}}",
+      "tech_stack": "{{tech_stack.language}} | {{project_type.type}}",
+      "install_command": "{{commands.install}}",
+      "dev_command": "{{commands.dev}}"
+    },
+    "package.json": {
+      "name": "{{project_metadata.slug}}",
+      "description": "{{project_metadata.description}}",
+      "author": "{{project_metadata.author}}",
+      "license": "{{project_metadata.license}}"
+    },
+    "README.md": {
+      "title": "{{project_metadata.name}}",
+      "description": "{{project_metadata.description}}"
+    },
+    ".nvmrc": {
+      "version": "{{tech_stack.node_version}}"
+    }
+  },
+
+  "filters": {
+    "slugify": {
+      "description": "Convert string to URL-safe slug",
+      "examples": {
+        "My Project": "my-project",
+        "Cool App 123": "cool-app-123"
+      }
+    },
+    "pascalcase": {
+      "description": "Convert to PascalCase",
+      "examples": {
+        "my-component": "MyComponent",
+        "user_profile": "UserProfile"
+      }
+    },
+    "uppercase": {
+      "description": "Convert to UPPERCASE",
+      "examples": {
+        "my_constant": "MY_CONSTANT"
+      }
+    },
+    "lowercase": {
+      "description": "Convert to lowercase",
+      "examples": {
+        "MyProject": "myproject"
+      }
+    }
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "name": "{{project_name}}",
+  "version": "1.0.0",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "description": "Block forbidden version/enhancement suffixes in file paths and content",
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=\"$CLAUDE_TOOL_INPUT_file_path\"; if [[ \"$file\" == *\"-v2.\"* || \"$file\" == *\"-v3.\"* || \"$file\" == *\"-improved.\"* || \"$file\" == *\"-enhanced.\"* || \"$file\" == *\"-new.\"* || \"$file\" == *\"-updated.\"* || \"$file\" == *\"-unified.\"* || \"$file\" == *\"-refactored.\"* ]]; then echo \"❌ BLOCKED: Forbidden suffix in filename: $file\n   Remove suffix and modify original file instead.\n   FORBIDDEN: -v2, -v3, -improved, -enhanced, -new, -updated, -unified, -refactored\" && exit 1; fi"
+          }
+        ]
+      },
+      {
+        "description": "Block root .md files (except CLAUDE.md, README.md, CHANGELOG.md, CONTRIBUTING.md, LICENSE.md)",
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=\"$CLAUDE_TOOL_INPUT_file_path\"; if [[ \"$file\" == *.md && \"$file\" != *\"/\"* && \"$file\" != \"CLAUDE.md\" && \"$file\" != \"README.md\" && \"$file\" != \"CHANGELOG.md\" && \"$file\" != \"CONTRIBUTING.md\" && \"$file\" != \"LICENSE.md\" ]]; then echo \"❌ BLOCKED: Root .md file not allowed: $file\n   Move to:\n   - {{wip_directory}}/ (temporary work: WIP_name_YYYY_MM_DD.md)\n   - {{docs_directory}}/guides/ (permanent guides)\n   - {{docs_directory}}/architecture/ (architecture docs)\n   - {{docs_directory}}/investigations/ (completed investigations)\" && exit 1; fi"
+          }
+        ]
+      }{{#if use_supabase}},
+      {
+        "description": "Block direct database modifications (use migrations)",
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cmd=\"$CLAUDE_TOOL_INPUT_command\"; if echo \"$cmd\" | grep -qE '(psql|pg_dump|pg_restore|dropdb|createdb)' && ! echo \"$cmd\" | grep -qE '(supabase|migration)'; then echo \"❌ BLOCKED: Direct database modifications not allowed\n   Use migrations in {{migrations_directory}}/\" && exit 1; fi"
+          }
+        ]
+      }{{/if}}
+    ],
+    "PostToolUse": [{{#if use_supabase}}
+      {
+        "description": "Warn about migration idempotency",
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=\"$CLAUDE_TOOL_INPUT_file_path\"; if [[ \"$file\" == *\"{{migrations_directory}}\"*.sql ]]; then content=\"$CLAUDE_TOOL_INPUT_content\"; if echo \"$content\" | grep -qE 'CREATE (TABLE|INDEX|POLICY|TRIGGER|FUNCTION)' && ! echo \"$content\" | grep -qE '(IF NOT EXISTS|DO \\$\\$|DROP.*IF EXISTS)'; then echo \"⚠️  WARNING: Migration may not be idempotent: $file\n   Consider using:\n   - CREATE TABLE IF NOT EXISTS\n   - CREATE INDEX IF NOT EXISTS\n   - DO \\$\\$ block for CREATE POLICY\n   - DROP TRIGGER IF EXISTS before CREATE TRIGGER\"; fi; fi"
+          }
+        ]
+      }{{/if}}
+    ]
+  }
+}
